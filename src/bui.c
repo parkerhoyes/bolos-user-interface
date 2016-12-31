@@ -228,6 +228,23 @@ void bui_fill_rect(int x, int y, int w, int h, bool color) {
 	}
 }
 
+void bui_set_pixel(int x, int y, bool color) {
+	if (x < 0 || x >= 128 || y < 0 || y >= 32)
+		return;
+	// Reflect coordinates
+	x = 128 - x;
+	y = 32 - y;
+	// Find destination
+	uint32_t dest_bit = y * 128 + x;
+	uint32_t dest_byte = dest_bit / 8;
+	dest_bit %= 8;
+	// Blit
+	if (color)
+		bui_buffer_bottom.bitmap[dest_byte] |= 0x80 >> dest_bit;
+	else
+		bui_buffer_bottom.bitmap[dest_byte] &= ~(0x80 >> dest_bit);
+}
+
 void bui_draw_bitmap(const unsigned char *bitmap, int bitmap_w, int src_x, int src_y, int dest_x, int dest_y, int w,
 		int h) {
 	if (dest_x >= 128 || dest_y >= 32 || w == 0 || h == 0 || dest_x + w <= 0 || dest_y + h <= 0)

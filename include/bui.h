@@ -95,6 +95,17 @@ void bui_invert();
 void bui_fill_rect(int x, int y, int w, int h, bool color);
 
 /*
+ * Set the color of a single pixel on the bottom display buffer. If the coordinates of the pixel are out of bounds of
+ * the display, this function has no side effects.
+ *
+ * Args:
+ *     x: the x-coordinate of the pixel to be set
+ *     y: the y-coordinate of the pixel to be set
+ *     color: the color to which the pixel is to be set; true is the foreground color and false is the background color
+ */
+void bui_set_pixel(int x, int y, bool color);
+
+/*
  * Draw a bitmap onto the bottom display buffer given a source rectangle on the bitmap's coordinate plane and a
  * destination rectangle on the display's coordinate plane. Any part of the destination rectangle out of bounds of the
  * display will not be drawn. The source rectangle must be entirely within the source bitmap. If the width or height is
