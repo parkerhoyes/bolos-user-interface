@@ -49,37 +49,7 @@ typedef union {
 	bui_font_info_t info;
 } bui_font_t;
 
-#include "bui_font_comic_sans_ms_20.inc"
-#include "bui_font_lucida_console_8.inc"
-#include "bui_font_lucida_console_15.inc"
-#include "bui_font_open_sans_bold_13.inc"
-#include "bui_font_open_sans_bold_21.inc"
-#include "bui_font_open_sans_extrabold_11.inc"
-#include "bui_font_open_sans_light_13.inc"
-#include "bui_font_open_sans_light_14.inc"
-#include "bui_font_open_sans_light_16.inc"
-#include "bui_font_open_sans_light_20.inc"
-#include "bui_font_open_sans_light_21.inc"
-#include "bui_font_open_sans_light_32.inc"
-#include "bui_font_open_sans_regular_11.inc"
-#include "bui_font_open_sans_semibold_18.inc"
-
-static const bui_font_t * const bui_fonts[] = {
-	&bui_font_comic_sans_ms_20,
-	&bui_font_lucida_console_8,
-	&bui_font_lucida_console_15,
-	&bui_font_open_sans_bold_13,
-	&bui_font_open_sans_bold_21,
-	&bui_font_open_sans_extrabold_11,
-	&bui_font_open_sans_light_13,
-	&bui_font_open_sans_light_14,
-	&bui_font_open_sans_light_16,
-	&bui_font_open_sans_light_20,
-	&bui_font_open_sans_light_21,
-	&bui_font_open_sans_light_32,
-	&bui_font_open_sans_regular_11,
-	&bui_font_open_sans_semibold_18,
-};
+#include "bui_font_fonts.inc"
 
 const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id) {
 	if ((int) font_id <= BUI_FONT_NONE || (int) font_id >= BUI_FONT_LAST)
