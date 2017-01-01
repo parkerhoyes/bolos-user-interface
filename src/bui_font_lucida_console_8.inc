@@ -614,7 +614,7 @@ static const bui_font_char_t bui_font_lucida_console_8_characters[] = {
 
 static const bui_font_t bui_font_lucida_console_8 = {
 	.data = {
-		8, 16, 0, 0x20, 0xFF,
+		8, 8, 0, 0x20, 0xFF,
 		bui_font_lucida_console_8_characters,
 		bui_font_lucida_console_8_bitmaps
 	}
