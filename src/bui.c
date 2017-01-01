@@ -314,24 +314,79 @@ void bui_draw_bitmap(const unsigned char *bitmap, int bitmap_w, int src_x, int s
 	}
 }
 
-void bui_draw_char(unsigned char ch, int x, int y, bui_font_id_e font_id) {
-	int h = bui_font_get_font_info(font_id)->char_height;
-	int w;
-	const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
-	bui_draw_bitmap(bitmap, w, 0, 0, x, y, w, h);
-}
-
-void bui_draw_string(const unsigned char *str, int x, int y, bui_font_id_e font_id) {
+void bui_draw_char(unsigned char ch, int x, int y, unsigned char alignment, bui_font_id_e font_id) {
 	if (x >= 128 || y >= 32)
 		return;
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	if (y + font_info->char_height <= 0)
+	int h = font_info->char_height;
+	int w;
+	const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
+	switch (alignment & BUI_HORIZONTAL_ALIGN_MASK) {
+	case BUI_HORIZONTAL_ALIGN_LEFT:
+		break;
+	case BUI_HORIZONTAL_ALIGN_CENTER:
+		x -= w / 2;
+		if (w % 2 == 1)
+			x -= 1;
+		break;
+	case BUI_HORIZONTAL_ALIGN_RIGHT:
+		x -= w;
+		break;
+	}
+	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
+	case BUI_VERTICAL_ALIGN_TOP:
+		break;
+	case BUI_VERTICAL_ALIGN_CENTER:
+		y -= h / 2;
+		if (h % 2 == 1)
+			y -= 1;
+		break;
+	case BUI_VERTICAL_ALIGN_BOTTOM:
+		y -= h;
+		break;
+	}
+	bui_draw_bitmap(bitmap, w, 0, 0, x, y, w, h);
+}
+
+void bui_draw_string(const unsigned char *str, int x, int y, unsigned char alignment, bui_font_id_e font_id) {
+	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
+	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
+	case BUI_VERTICAL_ALIGN_TOP:
+		break;
+	case BUI_VERTICAL_ALIGN_CENTER:
+		y -= font_info->baseline_height / 2;
+		if (font_info->baseline_height % 2 == 1)
+			y -= 1;
+		break;
+	case BUI_VERTICAL_ALIGN_BOTTOM:
+		y -= font_info->baseline_height;
+		break;
+	}
+	if (y >= 32 || y + font_info->char_height <= 0)
+		return;
+	if ((alignment & BUI_HORIZONTAL_ALIGN_MASK) != BUI_HORIZONTAL_ALIGN_LEFT) {
+		int w = 0;
+		for (const unsigned char *s = str; *s != '\0'; s++) {
+			w += bui_font_get_char_width(font_id, *s);
+			w += font_info->char_kerning;
+		}
+		if ((alignment & BUI_HORIZONTAL_ALIGN_MASK) == BUI_HORIZONTAL_ALIGN_CENTER) {
+			x -= w / 2;
+			if (w % 2 == 1)
+				x -= 1;
+		} else {
+			x -= w;
+		}
+		if (x + w <= 0)
+			return;
+	}
+	if (x >= 128)
 		return;
 	for (; *str != '\0' && x < 128; str++) {
 		int w;
 		const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
 		bui_draw_bitmap(bitmap, w, 0, 0, x, y, w, font_info->char_height);
 		x += w;
-		x += font_info->char_kerning; // TODO Should this be subtracted instead of added?
+		x += font_info->char_kerning;
 	}
 }

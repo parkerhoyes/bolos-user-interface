@@ -34,6 +34,15 @@
  * bytes in the sequence appear in lower memory addresses), rows preferred, from bottom to top and from right to left.
  */
 
+#define BUI_HORIZONTAL_ALIGN_MASK   0b000111
+#define BUI_HORIZONTAL_ALIGN_LEFT   0b000001
+#define BUI_HORIZONTAL_ALIGN_CENTER 0b000010
+#define BUI_HORIZONTAL_ALIGN_RIGHT  0b000100
+#define BUI_VERTICAL_ALIGN_MASK     0b111000
+#define BUI_VERTICAL_ALIGN_TOP      0b001000
+#define BUI_VERTICAL_ALIGN_CENTER   0b010000
+#define BUI_VERTICAL_ALIGN_BOTTOM   0b100000
+
 #define BUI_DECLARE_BITMAP(name) \
 		extern const unsigned char bui_bitmap_ ## name ## _w; \
 		extern const unsigned char bui_bitmap_ ## name ## _h; \
@@ -146,26 +155,41 @@ void bui_draw_bitmap(const unsigned char *bitmap, int bitmap_w, int src_x, int s
 
 /*
  * Draw a character in the specified font onto the bottom display buffer. Any part of the character out of bounds of the
- * display will not be drawn.
+ * display will not be drawn. The coordinates provided determine the position of the text anchor. The actual bounds the
+ * text is drawn within are determined by the anchor and the alignment. The alignment determines where, in the text's
+ * bounds, the anchor is located. For example, a horizontal alignment of "right" and a vertical alignment of "top" will
+ * place the anchor at the top-most, right-most position of the text's boundaries. Note that for purposes of alignment,
+ * the character's boundaries are considered to extend from the font's baseline to the ascender height.
  *
  * Args:
  *     ch: the character code of the character to be drawn
- *     x: the x-coordinate of the top-left corner of the destination; must be >= -32,768 and <= 32,767
- *     y: the y-coordinate of the top-left corner of the destination; must be >= -32,768 and <= 32,767
+ *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     alignment: the alignment of the text relative to the anchor; this must be a value obtained by performing a
+ *                bitwise OR between a constant of the form BUI_HORIZONTAL_ALIGN_<LEFT|CENTER|RIGHT> and a constant of
+ *                the form BUI_VERTICAL_ALIGN_<TOP|CENTER|BOTTOM>
  *     font_id: the ID of the font to be used to render the character
  */
-void bui_draw_char(unsigned char ch, int x, int y, bui_font_id_e font_id);
+void bui_draw_char(unsigned char ch, int x, int y, unsigned char alignment, bui_font_id_e font_id);
 
 /*
  * Draw a string in the specified font onto the bottom display buffer. Any part of the string out of bounds of the
- * buffer will not be drawn (the string will not wrap).
+ * buffer will not be drawn (the string will not wrap). The coordinates provided determine the position of the text
+ * anchor. The actual bounds the text is drawn within are determined by the anchor and the alignment. The alignment
+ * determines where, in the text's bounds, the anchor is located. For example, a horizontal alignment of "right" and a
+ * vertical alignment of "top" will place the anchor at the top-most, right-most position of the text's boundaries. Note
+ * that for purposes of alignment, the character's boundaries are considered to extend from the font's baseline to the
+ * ascender height.
  *
  * Args:
  *     str: the null-terminated string to be drawn; may not be NULL
- *     x: the x-coordinate of the top-left corner of the destination; must be >= -32,768 and <= 32,767
- *     y: the y-coordinate of the top-left corner of the destination; must be >= -32,768 and <= 32,767
+ *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     alignment: the alignment of the text relative to the anchor; this must be a value obtained by performing a
+ *                bitwise OR between a constant of the form BUI_HORIZONTAL_ALIGN_<LEFT|CENTER|RIGHT> and a constant of
+ *                the form BUI_VERTICAL_ALIGN_<TOP|CENTER|BOTTOM>
  *     font_id: the ID of the font to be used to render the string
  */
-void bui_draw_string(const unsigned char *str, int x, int y, bui_font_id_e font_id);
+void bui_draw_string(const unsigned char *str, int x, int y, unsigned char alignment, bui_font_id_e font_id);
 
 #endif
