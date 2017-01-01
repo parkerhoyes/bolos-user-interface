@@ -34,6 +34,21 @@
  * bytes in the sequence appear in lower memory addresses), rows preferred, from bottom to top and from right to left.
  */
 
+#define BUI_DECLARE_BITMAP(name) \
+		extern const unsigned char bui_bitmap_ ## name ## _w; \
+		extern const unsigned char bui_bitmap_ ## name ## _h; \
+		extern const unsigned char bui_bitmap_ ## name ## _bitmap[];
+
+BUI_DECLARE_BITMAP(check);
+BUI_DECLARE_BITMAP(cross);
+BUI_DECLARE_BITMAP(left);
+BUI_DECLARE_BITMAP(right);
+BUI_DECLARE_BITMAP(up);
+BUI_DECLARE_BITMAP(down);
+BUI_DECLARE_BITMAP(ledger_mini);
+BUI_DECLARE_BITMAP(badge_cross);
+BUI_DECLARE_BITMAP(badge_dashboard);
+
 /*
  * Initialize various data structures used by the UI manager. This should always be called once before any other
  * function in this API is called. This function fills the top and bottom display buffers with the background color.

@@ -32,6 +32,8 @@
 
 #include "bui_font.h"
 
+#include "bui_bitmaps.inc"
+
 typedef struct bui_buffer_bottom_t {
 	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
 	// right to left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
