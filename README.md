@@ -13,13 +13,12 @@ greater control over the rendering process.
 
 In order to do this, the meat of the library is a
 [blitting](https://en.wikipedia.org/wiki/Bit_blit) API which allows the
-application to be rendered onto an internal display buffer (the "bottom" buffer)
-before being sent to the MCU to be displayed. When the application is ready to
-display the frame, `bui_flush()` may be called which transfers the bottom
-display buffer onto the "top" display buffer, where it will wait to be sent to
-the MCU. This allows the application to begin rendering the next frame while the
-previous one is still being displayed. This technique is called
-double-buffering.
+application to be rendered onto a display buffer stored on the SE before being
+sent to the MCU to be displayed. When the application is ready to display the
+frame, `bui_display(...)` is used to convert the buffer into the format used by
+the MCU and send it. Storing the display buffer on the SE greatly simplifies the
+rendering process for applications with complicated interfaces because rendering
+can be done without having to communicate with the MCU.
 
 The library's API is thoroughly documented in its header files. In order to
 include this library in your project, simply include the files under the
