@@ -34,29 +34,6 @@
 
 #include "bui_bitmaps.inc"
 
-typedef struct bui_buffer_bottom_t {
-	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
-	// right to left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
-	uint8_t bitmap[512];
-} bui_buffer_bottom_t;
-
-typedef struct bui_buffer_top_t {
-	// An array of 8 128x4 bitmaps, each representing a section on the screen ordered from top to bottom. Within each
-	// bitmap, every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from right to
-	// left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
-	uint8_t bitmaps[8][64];
-} bui_buffer_top_t;
-
-// The buffer currently being displayed
-static bui_buffer_top_t bui_buffer_top;
-// The buffer currently available to be drawn onto by the application
-static bui_buffer_bottom_t bui_buffer_bottom;
-// The current progress displaying the top buffer. Odd values indicate the app is waiting for
-// SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT, whereas even values indicate the app is ready to send a display status to the
-// MCU. If even, this value / 2 is the index of the next bitmap to be sent. A value of 16 indicates the process is
-// complete (or not ready to begin).
-static int8_t bui_display_progress;
-
 /*
  * Get a 32 bit integer storing some or all of the data for a single row of a bitmap.
  *
@@ -135,54 +112,30 @@ static void bui_rshift_128(uint32_t *arr, uint8_t shift) {
 	arr[0] >>= shift;
 }
 
-void bui_init() {
-	os_memset(&bui_buffer_top.bitmaps, 0, sizeof(bui_buffer_top.bitmaps));
-	os_memset(&bui_buffer_bottom.bitmap, 0, sizeof(bui_buffer_bottom.bitmap));
-	bui_display_progress = 16;
-}
-
-void bui_display() {
-	if (bui_display_progress != 16 && bui_display_progress % 2 == 0) {
-		uint8_t i = bui_display_progress / 2;
-		unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
-		io_seproxyhal_display_bitmap(0, i * 4, 128, 4, color_index, 1, bui_buffer_top.bitmaps[i]);
-		bui_display_progress++;
-	}
-}
-
-void bui_display_processed() {
-	bui_display_progress++;
-}
-
-void bui_flush() {
-	// Reset display progress counter
-	if (bui_display_progress % 2 == 0)
-		bui_display_progress = 0;
+signed char bui_display(bui_bitmap_128x32_t *buffer, signed char progress) {
+	unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
+	unsigned char section[64];
+	for (int i = 0; i < 64; i++)
+		section[i] = buffer->bitmap[511 - progress * 64 - i];
+	io_seproxyhal_display_bitmap(0, progress * 4, 128, 4, color_index, 1, section);
+	if (progress != 7)
+		return ++progress;
 	else
-		bui_display_progress = -1;
-
-	// Transfer the single bitmap stored in the bottom display buffer into the top display buffer, splitting it up into
-	// 8 separate bitmaps and reversing the byte order in the process (this is the format required by the MCU).
-	for (int i = 0; i < 512; i++)
-		bui_buffer_top.bitmaps[i / 64][i % 64] = bui_buffer_bottom.bitmap[511 - i];
+		return -1;
 }
 
-bool bui_display_done() {
-	return bui_display_progress == 16;
+void bui_fill(bui_bitmap_128x32_t *buffer, bool color) {
+	os_memset(buffer->bitmap, color ? 0xFF : 0x00, sizeof(buffer->bitmap));
 }
 
-void bui_fill(bool color) {
-	os_memset(bui_buffer_bottom.bitmap, color ? 0xFF : 0x00, sizeof(bui_buffer_bottom.bitmap));
-}
-
-void bui_invert() {
-	uint32_t *end = (uint32_t*) &bui_buffer_bottom.bitmap[512];
-	for (uint32_t *ptr = (uint32_t*) &bui_buffer_bottom.bitmap[0]; ptr != end; ptr++) {
+void bui_invert(bui_bitmap_128x32_t *buffer) {
+	uint32_t *end = (uint32_t*) &buffer->bitmap[512];
+	for (uint32_t *ptr = (uint32_t*) &buffer->bitmap[0]; ptr != end; ptr++) {
 		*ptr = ~(*ptr);
 	}
 }
 
-void bui_fill_rect(int x, int y, int w, int h, bool color) {
+void bui_fill_rect(bui_bitmap_128x32_t *buffer, int x, int y, int w, int h, bool color) {
 	if (x >= 128 || y >= 32 || w == 0 || h == 0)
 		return;
 	if (x < 0)
@@ -199,7 +152,7 @@ void bui_fill_rect(int x, int y, int w, int h, bool color) {
 	w += x; // w is now the x-coord just beyond the bottom right corner
 	h += y; // h is now the y-coord just beyond the bottom right corner
 	for (int i = y; i < h; i++) {
-		uint8_t *row = &bui_buffer_bottom.bitmap[i * 16];
+		uint8_t *row = &buffer->bitmap[i * 16];
 		for (int j = 32; j != 160; j += 32) { // Iterate through all four 32 bit sequences in the row
 			if (x < j && w > j - 32) { // Only need to blit if current long is within rectangle
 				uint32_t mask = 0xFFFFFFFF; // The mask used to blit onto the current long
@@ -230,7 +183,7 @@ void bui_fill_rect(int x, int y, int w, int h, bool color) {
 	}
 }
 
-void bui_set_pixel(int x, int y, bool color) {
+void bui_set_pixel(bui_bitmap_128x32_t *buffer, int x, int y, bool color) {
 	if (x < 0 || x >= 128 || y < 0 || y >= 32)
 		return;
 	// Reflect coordinates
@@ -242,13 +195,13 @@ void bui_set_pixel(int x, int y, bool color) {
 	dest_bit %= 8;
 	// Blit
 	if (color)
-		bui_buffer_bottom.bitmap[dest_byte] |= 0x80 >> dest_bit;
+		buffer->bitmap[dest_byte] |= 0x80 >> dest_bit;
 	else
-		bui_buffer_bottom.bitmap[dest_byte] &= ~(0x80 >> dest_bit);
+		buffer->bitmap[dest_byte] &= ~(0x80 >> dest_bit);
 }
 
-void bui_draw_bitmap(const unsigned char *bitmap, int bitmap_w, int src_x, int src_y, int dest_x, int dest_y, int w,
-		int h) {
+void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, int bitmap_w, int src_x, int src_y,
+		int dest_x, int dest_y, int w, int h) {
 	if (dest_x >= 128 || dest_y >= 32 || w == 0 || h == 0 || dest_x + w <= 0 || dest_y + h <= 0)
 		return;
 	// Shift source and destination coordinates such that the destination rectangle is entirely contained in the display
@@ -279,7 +232,7 @@ void bui_draw_bitmap(const unsigned char *bitmap, int bitmap_w, int src_x, int s
 			source_row[j] = bui_get_bitmap_row_32(bitmap, bitmap_w, src_y + i - dest_y, src_x + j * 32);
 		}
 		bui_rshift_128(source_row, dest_x);
-		uint8_t *dest_row = &bui_buffer_bottom.bitmap[i * 16];
+		uint8_t *dest_row = &buffer->bitmap[i * 16];
 		for (int j = 32; j != 160; j += 32) { // Iterate through all four 32 bit sequences in the row
 			if (dest_x < j && w > j - 32) { // Only need to blit if current long is within rectangle
 				uint32_t mask = 0xFFFFFFFF; // The mask used to blit onto the current long
@@ -314,7 +267,8 @@ void bui_draw_bitmap(const unsigned char *bitmap, int bitmap_w, int src_x, int s
 	}
 }
 
-void bui_draw_char(unsigned char ch, int x, int y, unsigned char alignment, bui_font_id_e font_id) {
+void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, unsigned char alignment,
+		bui_font_id_e font_id) {
 	if (x >= 128 || y >= 32)
 		return;
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
@@ -345,10 +299,11 @@ void bui_draw_char(unsigned char ch, int x, int y, unsigned char alignment, bui_
 		y -= h;
 		break;
 	}
-	bui_draw_bitmap(bitmap, w, 0, 0, x, y, w, h);
+	bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, h);
 }
 
-void bui_draw_string(const unsigned char *str, int x, int y, unsigned char alignment, bui_font_id_e font_id) {
+void bui_draw_string(bui_bitmap_128x32_t *buffer, const unsigned char *str, int x, int y, unsigned char alignment,
+		bui_font_id_e font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
 	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
 	case BUI_VERTICAL_ALIGN_TOP:
@@ -385,7 +340,7 @@ void bui_draw_string(const unsigned char *str, int x, int y, unsigned char align
 	for (; *str != '\0' && x < 128; str++) {
 		int w;
 		const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
-		bui_draw_bitmap(bitmap, w, 0, 0, x, y, w, font_info->char_height);
+		bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, font_info->char_height);
 		x += w;
 		x += font_info->char_kerning;
 	}

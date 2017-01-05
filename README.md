@@ -25,6 +25,16 @@ The library's API is thoroughly documented in its header files. In order to
 include this library in your project, simply include the files under the
 `include/` directory and link to the source files in `src/`.
 
+## Examples
+
+For example uses of this library, see
+https://github.com/parkerhoyes/nanos-app-snake. This is an implementation of the
+popular game Snake for the Nano S that uses this library to render its user
+interface.
+
+If you use this library in your project, please feel free to email me (or submit
+a pull request) and I'll link to it in this README.
+
 ## Development Cycle
 
 This repository will follow a Git branching model similar to that described in
