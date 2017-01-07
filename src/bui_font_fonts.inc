@@ -22,46 +22,46 @@
  */
 
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_COMIC_SANS_MS_20
-#include "bui_font_comic_sans_ms_20.inc"
+#include "fonts/bui_font_comic_sans_ms_20.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_LUCIDA_CONSOLE_8
-#include "bui_font_lucida_console_8.inc"
+#include "fonts/bui_font_lucida_console_8.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_LUCIDA_CONSOLE_15
-#include "bui_font_lucida_console_15.inc"
+#include "fonts/bui_font_lucida_console_15.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_BOLD_13
-#include "bui_font_open_sans_bold_13.inc"
+#include "fonts/bui_font_open_sans_bold_13.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_BOLD_21
-#include "bui_font_open_sans_bold_21.inc"
+#include "fonts/bui_font_open_sans_bold_21.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_EXTRABOLD_11
-#include "bui_font_open_sans_extrabold_11.inc"
+#include "fonts/bui_font_open_sans_extrabold_11.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_13
-#include "bui_font_open_sans_light_13.inc"
+#include "fonts/bui_font_open_sans_light_13.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_14
-#include "bui_font_open_sans_light_14.inc"
+#include "fonts/bui_font_open_sans_light_14.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_16
-#include "bui_font_open_sans_light_16.inc"
+#include "fonts/bui_font_open_sans_light_16.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_20
-#include "bui_font_open_sans_light_20.inc"
+#include "fonts/bui_font_open_sans_light_20.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_21
-#include "bui_font_open_sans_light_21.inc"
+#include "fonts/bui_font_open_sans_light_21.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_32
-#include "bui_font_open_sans_light_32.inc"
+#include "fonts/bui_font_open_sans_light_32.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_REGULAR_11
-#include "bui_font_open_sans_regular_11.inc"
+#include "fonts/bui_font_open_sans_regular_11.inc"
 #endif
 #if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_SEMIBOLD_18
-#include "bui_font_open_sans_semibold_18.inc"
+#include "fonts/bui_font_open_sans_semibold_18.inc"
 #endif
 
 static const bui_font_t * const bui_fonts[] = {
