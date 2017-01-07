@@ -40,14 +40,24 @@ typedef struct bui_bitmap_128x32_t {
  * bytes in the sequence appear in lower memory addresses), rows preferred, from bottom to top and from right to left.
  */
 
-#define BUI_HORIZONTAL_ALIGN_MASK   0b000111
-#define BUI_HORIZONTAL_ALIGN_LEFT   0b000001
-#define BUI_HORIZONTAL_ALIGN_CENTER 0b000010
-#define BUI_HORIZONTAL_ALIGN_RIGHT  0b000100
-#define BUI_VERTICAL_ALIGN_MASK     0b111000
-#define BUI_VERTICAL_ALIGN_TOP      0b001000
-#define BUI_VERTICAL_ALIGN_CENTER   0b010000
-#define BUI_VERTICAL_ALIGN_BOTTOM   0b100000
+typedef enum {
+	BUI_DIR_LEFT         = 0b00000001,
+	BUI_DIR_RIGHT        = 0b00000010,
+	BUI_DIR_TOP          = 0b00000100,
+	BUI_DIR_BOTTOM       = 0b00001000,
+	BUI_DIR_CENTER       = 0b00010000,
+	BUI_DIR_LEFT_TOP     = (int) BUI_DIR_LEFT | (int) BUI_DIR_TOP,
+	BUI_DIR_LEFT_BOTTOM  = (int) BUI_DIR_LEFT | (int) BUI_DIR_BOTTOM,
+	BUI_DIR_RIGHT_TOP    = (int) BUI_DIR_RIGHT | (int) BUI_DIR_TOP,
+	BUI_DIR_RIGHT_BOTTOM = (int) BUI_DIR_RIGHT | (int) BUI_DIR_BOTTOM,
+} bui_dir_e;
+
+#define BUI_DIR_IS_LEFT(dir) (((int) (dir) & (int) BUI_DIR_LEFT) != 0)
+#define BUI_DIR_IS_RIGHT(dir) (((int) (dir) & (int) BUI_DIR_RIGHT) != 0)
+#define BUI_DIR_IS_TOP(dir) (((int) (dir) & (int) BUI_DIR_TOP) != 0)
+#define BUI_DIR_IS_BOTTOM(dir) (((int) (dir) & (int) BUI_DIR_BOTTOM) != 0)
+#define BUI_DIR_IS_HTL_CENTER(dir) (((int) (dir) & ~((int) BUI_DIR_TOP | (int) BUI_DIR_BOTTOM)) == 0)
+#define BUI_DIR_IS_VTL_CENTER(dir) (((int) (dir) & ~((int) BUI_DIR_LEFT | (int) BUI_DIR_RIGHT)) == 0)
 
 #define BUI_DECLARE_BITMAP(name) \
 		extern const unsigned char bui_bitmap_ ## name ## _w; \
@@ -149,43 +159,38 @@ void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, i
  * Draw a character in the specified font onto the bottom display buffer. Any part of the character out of bounds of the
  * display will not be drawn. The coordinates provided determine the position of the text anchor. The actual bounds the
  * text is drawn within are determined by the anchor and the alignment. The alignment determines where, in the text's
- * bounds, the anchor is located. For example, a horizontal alignment of "right" and a vertical alignment of "top" will
- * place the anchor at the top-most, right-most position of the text's boundaries. Note that for purposes of alignment,
- * the character's boundaries are considered to extend from the font's baseline to the ascender height.
+ * bounds, the anchor is located. For example, an alignment of BUI_RIGHT_TOP will place the anchor at the top-most,
+ * right-most position of the text's boundaries. Note that for purposes of alignment, the character's boundaries are
+ * considered to extend from the font's baseline to the ascender height.
  *
  * Args:
  *     buffer: the display buffer onto which to draw the character
  *     ch: the character code of the character to be drawn
  *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
  *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
- *     alignment: the alignment of the text relative to the anchor; this must be a value obtained by performing a
- *                bitwise OR between a constant of the form BUI_HORIZONTAL_ALIGN_<LEFT|CENTER|RIGHT> and a constant of
- *                the form BUI_VERTICAL_ALIGN_<TOP|CENTER|BOTTOM>
+ *     alignment: the position of the anchor within the text boundaries
  *     font_id: the ID of the font to be used to render the character
  */
-void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, unsigned char alignment,
+void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, bui_dir_e alignment,
 		bui_font_id_e font_id);
 
 /*
  * Draw a string in the specified font onto the bottom display buffer. Any part of the string out of bounds of the
  * buffer will not be drawn (the string will not wrap). The coordinates provided determine the position of the text
  * anchor. The actual bounds the text is drawn within are determined by the anchor and the alignment. The alignment
- * determines where, in the text's bounds, the anchor is located. For example, a horizontal alignment of "right" and a
- * vertical alignment of "top" will place the anchor at the top-most, right-most position of the text's boundaries. Note
- * that for purposes of alignment, the character's boundaries are considered to extend from the font's baseline to the
- * ascender height.
+ * determines where, in the text's bounds, the anchor is located. For example, an alignment of BUI_RIGHT_TOP will place
+ * the anchor at the top-most, right-most position of the text's boundaries. Note that for purposes of alignment, the
+ * character's boundaries are considered to extend from the font's baseline to the ascender height.
  *
  * Args:
  *     buffer: the display buffer onto which to draw the string
  *     str: the null-terminated string to be drawn; may not be NULL
  *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
  *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
- *     alignment: the alignment of the text relative to the anchor; this must be a value obtained by performing a
- *                bitwise OR between a constant of the form BUI_HORIZONTAL_ALIGN_<LEFT|CENTER|RIGHT> and a constant of
- *                the form BUI_VERTICAL_ALIGN_<TOP|CENTER|BOTTOM>
+ *     alignment: the position of the anchor within the text boundaries
  *     font_id: the ID of the font to be used to render the string
  */
-void bui_draw_string(bui_bitmap_128x32_t *buffer, const unsigned char *str, int x, int y, unsigned char alignment,
+void bui_draw_string(bui_bitmap_128x32_t *buffer, const unsigned char *str, int x, int y, bui_dir_e alignment,
 		bui_font_id_e font_id);
 
 #endif

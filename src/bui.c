@@ -267,7 +267,7 @@ void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, i
 	}
 }
 
-void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, unsigned char alignment,
+void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, bui_dir_e alignment,
 		bui_font_id_e font_id) {
 	if (x >= 128 || y >= 32)
 		return;
@@ -275,57 +275,42 @@ void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, 
 	int h = font_info->char_height;
 	int w;
 	const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
-	switch (alignment & BUI_HORIZONTAL_ALIGN_MASK) {
-	case BUI_HORIZONTAL_ALIGN_LEFT:
-		break;
-	case BUI_HORIZONTAL_ALIGN_CENTER:
+	if (BUI_DIR_IS_HTL_CENTER(alignment)) {
 		x -= w / 2;
 		if (w % 2 == 1)
 			x -= 1;
-		break;
-	case BUI_HORIZONTAL_ALIGN_RIGHT:
+	} else if (BUI_DIR_IS_RIGHT(alignment)) {
 		x -= w;
-		break;
 	}
-	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
-	case BUI_VERTICAL_ALIGN_TOP:
-		break;
-	case BUI_VERTICAL_ALIGN_CENTER:
+	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
 		y -= h / 2;
 		if (h % 2 == 1)
 			y -= 1;
-		break;
-	case BUI_VERTICAL_ALIGN_BOTTOM:
+	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
 		y -= h;
-		break;
 	}
 	bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, h);
 }
 
-void bui_draw_string(bui_bitmap_128x32_t *buffer, const unsigned char *str, int x, int y, unsigned char alignment,
+void bui_draw_string(bui_bitmap_128x32_t *buffer, const unsigned char *str, int x, int y, bui_dir_e alignment,
 		bui_font_id_e font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
-	case BUI_VERTICAL_ALIGN_TOP:
-		break;
-	case BUI_VERTICAL_ALIGN_CENTER:
+	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
 		y -= font_info->baseline_height / 2;
 		if (font_info->baseline_height % 2 == 1)
 			y -= 1;
-		break;
-	case BUI_VERTICAL_ALIGN_BOTTOM:
+	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
 		y -= font_info->baseline_height;
-		break;
 	}
 	if (y >= 32 || y + font_info->char_height <= 0)
 		return;
-	if ((alignment & BUI_HORIZONTAL_ALIGN_MASK) != BUI_HORIZONTAL_ALIGN_LEFT) {
+	if (!BUI_DIR_IS_LEFT(alignment)) {
 		int w = 0;
 		for (const unsigned char *s = str; *s != '\0'; s++) {
 			w += bui_font_get_char_width(font_id, *s);
 			w += font_info->char_kerning;
 		}
-		if ((alignment & BUI_HORIZONTAL_ALIGN_MASK) == BUI_HORIZONTAL_ALIGN_CENTER) {
+		if (BUI_DIR_IS_HTL_CENTER(alignment)) {
 			x -= w / 2;
 			if (w % 2 == 1)
 				x -= 1;
