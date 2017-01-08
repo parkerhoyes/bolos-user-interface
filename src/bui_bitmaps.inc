@@ -66,6 +66,30 @@ const unsigned char bui_bitmap_down_bitmap[] = {
 	0x10, 0x51, 0x14, 0x10,
 };
 
+const unsigned char bui_bitmap_left_filled_w = 4;
+const unsigned char bui_bitmap_left_filled_h = 7;
+const unsigned char bui_bitmap_left_filled_bitmap[] = {
+	0x8C, 0xEF, 0xEC, 0x80,
+};
+
+const unsigned char bui_bitmap_right_filled_w = 4;
+const unsigned char bui_bitmap_right_filled_h = 7;
+const unsigned char bui_bitmap_right_filled_bitmap[] = {
+	0x13, 0x7F, 0x73, 0x10,
+};
+
+const unsigned char bui_bitmap_up_filled_w = 7;
+const unsigned char bui_bitmap_up_filled_h = 4;
+const unsigned char bui_bitmap_up_filled_bitmap[] = {
+	0xFE, 0xF8, 0xE0, 0x80,
+};
+
+const unsigned char bui_bitmap_down_filled_w = 7;
+const unsigned char bui_bitmap_down_filled_h = 4;
+const unsigned char bui_bitmap_down_filled_bitmap[] = {
+	0x10, 0x71, 0xF7, 0xF0,
+};
+
 const unsigned char bui_bitmap_ledger_mini_w = 16;
 const unsigned char bui_bitmap_ledger_mini_h = 16;
 const unsigned char bui_bitmap_ledger_mini_bitmap[] = {
