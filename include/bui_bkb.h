@@ -43,6 +43,8 @@ typedef struct {
 	uint8_t bits_typed; // The sequence of "bits" inputted by the user, starting at the MSB (0 is left, 1 is right)
 	uint8_t bits_typed_size; // The number of "bits" inputted by the user (the number of left / right choices)
 	char option; // Specifies the active sub-menu for a particular set of characters; '\0' is none
+	uint8_t keys_tick; // The animation ticker for key animations; 255 is no animations, KEYS_ANIMATION_LEN is done
+	uint8_t cursor_tick; // The animation ticker for the cursor blink animation
 } bui_bkb_bkb_t;
 
 extern const char bui_bkb_layout_alphabetic[26];
@@ -69,9 +71,10 @@ extern const char bui_bkb_layout_standard[30];
  *            in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space which will be
  *            displayed as an underscore; if empty, this may be NULL
  *     typed_size: the length of the typed string; must be <= 19
+ *     animations: true if the keyboard is to be animated, false otherwise
  */
 void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, const char *typed,
-		unsigned int typed_size);
+		unsigned int typed_size, bool animations);
 
 /*
  * Indicate that the user has chosen a letter on the specified side of the screen for a specified keyboard.
@@ -84,6 +87,16 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_si
  *     backspace is chosen, 0x2FF is returned; if a special option character is chosen then 0x1FF is returned
  */
 int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
+
+/*
+ * Indicate that a single animation tick has passed. If animations for the specified keyboard are disabled, this
+ * function should never be called. If they are enabled, this function should be called at a rate of 25 Hz (and
+ * preferrably the keyboard should be drawn at the same rate).
+ *
+ * Returns:
+ *     true if the tick may have resulted in a change in the way the keyboard is drawn, false otherwise
+ */
+bool bui_bkb_tick(bui_bkb_bkb_t *bkb);
 
 /*
  * Draw the specified keyboard onto the specified display buffer.
