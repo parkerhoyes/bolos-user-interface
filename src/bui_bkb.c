@@ -36,6 +36,12 @@
 #define KEYS_ANIMATION_LEN 9 // The duration of the keys animation, in 40 ms increments
 #define CURSOR_ANIMATION_INT 25 // Half the period of the cursor blink animation, in 40 ms increments
 
+static const unsigned char bitmap_space_bitmap[] = {
+	0x00, 0x3F, 0x10, 0x00, 0x00,
+};
+static const uint8_t bitmap_space_w = 5;
+static const uint8_t bitmap_space_h = 8;
+
 static const unsigned char bitmap_toggle_case_bitmap[] = {
 	0x03, 0xA2, 0x38, 0xE2, 0x2E,
 };
@@ -89,7 +95,7 @@ static void bui_bkb_toggle_case(char *str, uint8_t n) {
  * Args:
  *     buffer: the display buffer
  *     key: the key to be drawn; may be a character displayable in BUI_FONT_LUCIDA_CONSOLE_8, or an option key; the only
- *          whitespace character allowed is a space, which is drawn as an underscore
+ *          whitespace character allowed is a space
  *     x: the x-coordinate of the top-left corner of the destination
  *     y: the y-coordinate of the top-left corner of the destination
  */
@@ -106,8 +112,8 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int x, int y
 				bitmap_toggle_case_h);
 		return;
 	case ' ':
-		key = '_';
-		break;
+		bui_draw_bitmap(buffer, bitmap_space_bitmap, bitmap_space_w, 0, 0, x, y, bitmap_space_w, bitmap_space_h);
+		return;
 	}
 	bui_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
 }

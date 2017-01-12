@@ -60,16 +60,15 @@ extern const char bui_bkb_layout_standard[30];
  * Args:
  *     bkb: the preallocated keyboard
  *     layout: a string containing all of the characters to be displayed on the keyboard, in order; all characters must
- *            be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space
- *            which will be displayed as an underscore; the character OPTION_NUMERICS is a special character that will
- *            provide an option to type in numeric digits from 0 to 9; the character OPTION_SYMBOLS is a special
- *            character that will provide an option to type in symbols; the character OPTION_TOGGLE_CASE is a special
- *            character that will toggle the case of all alphabetic characters available for the user to choose from; if
- *            empty, this may be NULL
+ *            be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space;
+ *            the character OPTION_NUMERICS is a special character that will provide an option to type in numeric digits
+ *            from 0 to 9; the character OPTION_SYMBOLS is a special character that will provide an option to type in
+ *            symbols; the character OPTION_TOGGLE_CASE is a special character that will toggle the case of all
+ *            alphabetic characters available for the user to choose from; if empty, this may be NULL
  *     layout_size: the length of the layout string; must be <= 35
  *     typed: a string containing the text used to initialize the keyboard's textbox; all characters must be displayable
- *            in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space which will be
- *            displayed as an underscore; if empty, this may be NULL
+ *            in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space; if empty, this
+ *            may be NULL
  *     typed_size: the length of the typed string; must be <= 19
  *     animations: true if the keyboard is to be animated, false otherwise
  */
