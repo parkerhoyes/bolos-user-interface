@@ -36,10 +36,11 @@
 // NOTE: The definition of this struct is considered internal. It may be changed between versions without warning, and
 // the struct's data should never be modified by code external to this module (bui_bkb).
 typedef struct {
-	char chars[35]; // The buffer that stores the possible characters the user may choose from (the order matters)
-	uint8_t chars_size; // The number of characters in chars
-	char type_buff[19]; // The buffer that stores the characters that the user has typed
+	char layout[35]; // The buffer that stores the possible "keys" the user may choose from (the order matters)
+	uint8_t layout_size; // The number of "keys" in layout
+	char *type_buff; // The buffer that stores the characters that the user has typed
 	uint8_t type_buff_size; // The number of characters in type_buff
+	uint8_t type_buff_cap; // The maximum capacity of type_buff (in bytes)
 	uint8_t bits_typed; // The sequence of "bits" inputted by the user, starting at the MSB (0 is left, 1 is right)
 	uint8_t bits_typed_size; // The number of "bits" inputted by the user (the number of left / right choices)
 	char option; // Specifies the active sub-menu for a particular set of characters; '\0' is none
@@ -66,14 +67,16 @@ extern const char bui_bkb_layout_standard[30];
  *            symbols; the character OPTION_TOGGLE_CASE is a special character that will toggle the case of all
  *            alphabetic characters available for the user to choose from; if empty, this may be NULL
  *     layout_size: the length of the layout string; must be <= 35
- *     typed: a string containing the text used to initialize the keyboard's textbox; all characters must be displayable
- *            in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space; if empty, this
- *            may be NULL
- *     typed_size: the length of the typed string; must be <= 19
+ *     type_buff: the buffer used to contain the text in the keyboard's textbox, encoded in ASCII with no
+ *            null-terminator; all characters must be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only
+ *            whitespace character allowed is a space
+ *     type_buff_size: the number of characters currently in type_buff
+ *     type_buff_cap: the maximum capacity of type_buff; also the maximum number of characters the keyboard will allow
+ *                    the user to type in; must be >= 1 and <= 255
  *     animations: true if the keyboard is to be animated, false otherwise
  */
-void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, const char *typed,
-		unsigned int typed_size, bool animations);
+void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, char *type_buff,
+		unsigned char type_buff_size, unsigned char type_buff_cap, bool animations);
 
 /*
  * Indicate that the user has chosen a letter on the specified side of the screen for a specified keyboard.
@@ -107,15 +110,18 @@ bool bui_bkb_tick(bui_bkb_bkb_t *bkb);
 void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer);
 
 /*
- * Get the characters that have been typed (the characters currently in the keyboard's textbox). The textbox never
- * contains more than 19 characters.
+ *
  *
  * Args:
  *     bkb: the keyboard
- *     dest: the destination to write the characters into (no null terminator is written)
- * Returns:
- *     the number of characters written
+ *     type_buff: the buffer used to contain the text in the keyboard's textbox, encoded in ASCII with no
+ *            null-terminator; all characters must be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only
+ *            whitespace character allowed is a space
+ *     type_buff_size: the number of characters currently in type_buff
+ *     type_buff_cap: the maximum capacity of type_buff; also the maximum number of characters the keyboard will allow
+ *                    the user to type in; must be >= 1 and <= 255
  */
-unsigned int bui_bkb_get_typed(const bui_bkb_bkb_t *bkb, char *dest);
+void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, unsigned char type_buff_size,
+		unsigned char type_buff_cap);
 
 #endif

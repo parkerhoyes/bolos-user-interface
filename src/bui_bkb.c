@@ -36,6 +36,12 @@
 #define KEYS_ANIMATION_LEN 9 // The duration of the keys animation, in 40 ms increments
 #define CURSOR_ANIMATION_INT 25 // Half the period of the cursor blink animation, in 40 ms increments
 
+static const unsigned char bitmap_ellipsis_bitmap[] = {
+	0x00, 0x2A, 0x00, 0x00, 0x00,
+};
+static const uint8_t bitmap_ellipsis_w = 5;
+static const uint8_t bitmap_ellipsis_h = 8;
+
 static const unsigned char bitmap_space_bitmap[] = {
 	0x00, 0x3F, 0x10, 0x00, 0x00,
 };
@@ -118,14 +124,14 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int x, int y
 	bui_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
 }
 
-void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, const char *typed,
-		unsigned int typed_size, bool animations) {
+void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, char *type_buff,
+		unsigned char type_buff_size, unsigned char type_buff_cap, bool animations) {
 	if (layout_size != 0)
-		os_memcpy(bkb->chars, layout, layout_size);
-	bkb->chars_size = layout_size;
-	if (typed_size != 0)
-		os_memcpy(bkb->type_buff, typed, typed_size);
-	bkb->type_buff_size = typed_size;
+		os_memcpy(bkb->layout, layout, layout_size);
+	bkb->layout_size = layout_size;
+	bkb->type_buff = type_buff;
+	bkb->type_buff_size = type_buff_size;
+	bkb->type_buff_cap = type_buff_cap;
 	bkb->bits_typed = 0;
 	bkb->bits_typed_size = 0;
 	bkb->option = '\0';
@@ -135,7 +141,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_si
 
 int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 	// Handle full type buffer
-	if (bkb->type_buff_size == 19) {
+	if (bkb->type_buff_size == bkb->type_buff_cap) {
 		if (side == BUI_DIR_LEFT) { // If backspace key was chosen
 			bkb->type_buff_size -= 1;
 			if (bkb->keys_tick != 255)
@@ -146,20 +152,20 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 	}
 
 	// Get currently active layout
-	const char *chars;
-	uint8_t chars_size;
+	const char *layout;
+	uint8_t layout_size;
 	switch (bkb->option) {
 	case '\0':
-		chars = bkb->chars;
-		chars_size = bkb->chars_size;
+		layout = bkb->layout;
+		layout_size = bkb->layout_size;
 		break;
 	case BUI_BKB_OPTION_NUMERICS:
-		chars = bui_bkb_layout_numeric;
-		chars_size = sizeof(bui_bkb_layout_numeric);
+		layout = bui_bkb_layout_numeric;
+		layout_size = sizeof(bui_bkb_layout_numeric);
 		break;
 	case BUI_BKB_OPTION_SYMBOLS:
-		chars = bui_bkb_layout_symbols;
-		chars_size = sizeof(bui_bkb_layout_symbols);
+		layout = bui_bkb_layout_symbols;
+		layout_size = sizeof(bui_bkb_layout_symbols);
 		break;
 	}
 
@@ -169,7 +175,7 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 	bkb->bits_typed_size += 1;
 
 	// Find chosen character
-	uint8_t charsn = chars_size;
+	uint8_t charsn = layout_size;
 	if (bkb->type_buff_size != 0 && bkb->option == '\0') // Handle backspace key, if applicable
 		charsn += 1;
 	uint8_t charsi = 0;
@@ -186,13 +192,13 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 	if (charsn == 1) {
 		bkb->bits_typed = 0;
 		bkb->bits_typed_size = 0;
-		if (charsi == chars_size) { // If backspace key was chosen
+		if (charsi == layout_size) { // If backspace key was chosen
 			bkb->type_buff_size -= 1;
 			if (bkb->keys_tick != 255)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x2FF;
 		}
-		char ch = chars[charsi];
+		char ch = layout[charsi];
 		switch (ch) {
 		case BUI_BKB_OPTION_NUMERICS:
 			bkb->option = BUI_BKB_OPTION_NUMERICS;
@@ -205,7 +211,7 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x1FF; // No character was chosen
 		case BUI_BKB_OPTION_TOGGLE_CASE:
-			bui_bkb_toggle_case(bkb->chars, bkb->chars_size);
+			bui_bkb_toggle_case(bkb->layout, bkb->layout_size);
 			bkb->option = '\0';
 			if (bkb->keys_tick != 255)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
@@ -238,17 +244,40 @@ bool bui_bkb_tick(bui_bkb_bkb_t *bkb) {
 }
 
 void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
-	// Draw textbox underscores
-	for (uint8_t i = 0; i < 20; i++) {
-		bui_fill_rect(buffer, 4 + i * 6, 31, 5, 1, true);
+	// Locate textbox
+	uint8_t textbox_size = bkb->type_buff_cap + 1; // The number of slots in the textbox
+	if (textbox_size > 20)
+		textbox_size = 20;
+	// The index in bkb->type_buff of the first character displayed in the textbox (which must be replaced with an
+	// ellipsis textbox_ellipsis is true)
+	uint8_t textbox_i = bkb->type_buff_size <= 19 ? 0 : bkb->type_buff_size - 19;
+	// The x-coordinate of the leftmost pixel at the leftmost slot of the textbox
+	uint8_t textbox_x = 64 - textbox_size * 6 / 2;
+	// True if an ellipsis should be displayed in the first slot instead of the first character, false otherwise
+	bool textbox_ellipsis = bkb->type_buff_size > 19;
+	// The slot index of the cursor
+	uint8_t textbox_cursor_i = bkb->type_buff_size;
+	if (textbox_cursor_i > 19)
+		textbox_cursor_i = 19;
+
+	// Draw textbox slots
+	for (uint8_t i = 0; i < textbox_size; i++) {
+		bui_fill_rect(buffer, textbox_x + i * 6, 31, 5, 1, true);
 	}
 
 	// Draw textbox contents
-	for (uint8_t i = 0; i < bkb->type_buff_size; i++) {
-		bui_draw_char(buffer, bkb->type_buff[i], 4 + i * 6, 22, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
+	for (uint8_t i = 0; i <= textbox_cursor_i; i++) {
+		if (i == 0 && textbox_ellipsis) {
+			bui_draw_bitmap(buffer, bitmap_ellipsis_bitmap, bitmap_ellipsis_w, 0, 0, textbox_x, 22, bitmap_ellipsis_w,
+					bitmap_ellipsis_h);
+		} else if (i < textbox_cursor_i) {
+			bui_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
+					BUI_FONT_LUCIDA_CONSOLE_8);
+		} else { // i == textbox_cursor_i
+			if (bkb->keys_tick == 255 || bkb->cursor_tick < 10)
+				bui_fill_rect(buffer, textbox_x + textbox_cursor_i * 6 + 2, 22, 1, 7, true); // Draw cursor
+		}
 	}
-	if (bkb->keys_tick == 255 || bkb->cursor_tick < 10)
-		bui_fill_rect(buffer, 6 + bkb->type_buff_size * 6, 22, 1, 7, true); // Draw cursor
 
 	// Draw center arrow icons
 	bui_draw_bitmap(buffer, bui_bitmap_left_bitmap, bui_bitmap_left_w, 0, 0, 58, 5, bui_bitmap_left_w,
@@ -257,28 +286,28 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 			bui_bitmap_right_h);
 
 	// Draw keyboard "keys"
-	if (bkb->type_buff_size != 19) { // If the textbox is not full
+	if (bkb->type_buff_size != bkb->type_buff_cap) { // If the textbox is not full
 		// Get currently active layout
-		const char *chars;
-		uint8_t chars_size;
+		const char *layout;
+		uint8_t layout_size;
 		switch (bkb->option) {
 		case '\0':
-			chars = bkb->chars;
-			chars_size = bkb->chars_size;
+			layout = bkb->layout;
+			layout_size = bkb->layout_size;
 			break;
 		case BUI_BKB_OPTION_NUMERICS:
-			chars = bui_bkb_layout_numeric;
-			chars_size = sizeof(bui_bkb_layout_numeric);
+			layout = bui_bkb_layout_numeric;
+			layout_size = sizeof(bui_bkb_layout_numeric);
 			break;
 		case BUI_BKB_OPTION_SYMBOLS:
-			chars = bui_bkb_layout_symbols;
-			chars_size = sizeof(bui_bkb_layout_symbols);
+			layout = bui_bkb_layout_symbols;
+			layout_size = sizeof(bui_bkb_layout_symbols);
 			break;
 		}
 
 		// Find currently and previously displayed sections
 		uint8_t prev_charsi = 0;
-		uint8_t prev_charsn = chars_size;
+		uint8_t prev_charsn = layout_size;
 		if (bkb->type_buff_size != 0 && bkb->option == '\0') // Handle backspace key, if applicable
 			prev_charsn += 1;
 		for (uint8_t i = 0; i + 1 < bkb->bits_typed_size; i++) {
@@ -320,7 +349,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 				x = (int) prev_x + ((int) x - (int) prev_x) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 				y = (int) prev_y + ((int) y - (int) prev_y) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 			}
-			bui_bkb_draw_key(buffer, chars[lefti + i], x, y);
+			bui_bkb_draw_key(buffer, layout[lefti + i], x, y);
 		}
 
 		// Draw keys on right side
@@ -342,13 +371,13 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 				x = (int) prev_x + ((int) x - (int) prev_x) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 				y = (int) prev_y + ((int) y - (int) prev_y) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 			}
-			if (righti + i == chars_size) {
+			if (righti + i == layout_size) {
 				// Draw backspace key
 				bui_draw_bitmap(buffer, bui_bitmap_left_filled_bitmap, bui_bitmap_left_filled_w, 0, 0, x + 1, y,
 						bui_bitmap_left_filled_w, bui_bitmap_left_filled_h);
 			} else {
 				// Draw normal key
-				bui_bkb_draw_key(buffer, chars[righti + i], x, y);
+				bui_bkb_draw_key(buffer, layout[righti + i], x, y);
 			}
 		}
 	} else {
@@ -358,8 +387,9 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 	}
 }
 
-unsigned int bui_bkb_get_typed(const bui_bkb_bkb_t *bkb, char *dest) {
-	if (bkb->type_buff_size != 0)
-		os_memcpy(dest, bkb->type_buff, bkb->type_buff_size);
-	return bkb->type_buff_size;
+void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, unsigned char type_buff_size,
+		unsigned char type_buff_cap) {
+	bkb->type_buff = type_buff;
+	bkb->type_buff_size = type_buff_size;
+	bkb->type_buff_cap = type_buff_cap;
 }
