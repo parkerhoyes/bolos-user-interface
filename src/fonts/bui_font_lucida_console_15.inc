@@ -1,5 +1,5 @@
 /*
- * License for the BOLOS User Interface project, originally found here:
+ * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
  * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>

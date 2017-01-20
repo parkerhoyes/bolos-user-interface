@@ -1,4 +1,4 @@
-# BOLOS User Interface
+# BOLOS User Interface Library
 
 This repository contains a user interface library for
 [BOLOS](http://ledger.readthedocs.io/en/latest/bolos/index.html) applications.
