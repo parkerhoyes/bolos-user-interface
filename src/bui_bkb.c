@@ -29,6 +29,7 @@
 #include "os.h"
 
 #include "bui.h"
+#include "bui_font.h"
 
 #define CEIL_DIV(x, y) (1 + (((x) - 1) / (y)))
 #define NTH_BIT(n, i) (((n) >> (7 - (i))) & 1) // Only to be used with uint8_t
@@ -121,7 +122,7 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int x, int y
 		bui_draw_bitmap(buffer, bitmap_space_bitmap, bitmap_space_w, 0, 0, x, y, bitmap_space_w, bitmap_space_h);
 		return;
 	}
-	bui_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
+	bui_font_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
 }
 
 void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, char *type_buff,
@@ -271,7 +272,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 			bui_draw_bitmap(buffer, bitmap_ellipsis_bitmap, bitmap_ellipsis_w, 0, 0, textbox_x, 22, bitmap_ellipsis_w,
 					bitmap_ellipsis_h);
 		} else if (i < textbox_cursor_i) {
-			bui_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
+			bui_font_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
 					BUI_FONT_LUCIDA_CONSOLE_8);
 		} else { // i == textbox_cursor_i
 			if (bkb->keys_tick == 255 || bkb->cursor_tick < 10)
