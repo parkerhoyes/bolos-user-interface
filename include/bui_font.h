@@ -24,6 +24,8 @@
 #ifndef BUI_FONT_H_
 #define BUI_FONT_H_
 
+#include <stdint.h>
+
 #include "bui.h"
 
 typedef enum {
@@ -47,11 +49,11 @@ typedef enum {
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
 typedef struct {
-	unsigned char char_height;
-	unsigned char baseline_height;
-	unsigned char char_kerning;
-	unsigned char first_char; // Character code of the first character with a bitmap in this font
-	unsigned char last_char; // Character code of the last character with a bitmap in this font
+	uint8_t char_height;
+	uint8_t baseline_height;
+	uint8_t char_kerning;
+	uint8_t first_char; // Character code of the first character with a bitmap in this font
+	uint8_t last_char; // Character code of the last character with a bitmap in this font
 } bui_font_info_t;
 
 /*
@@ -73,7 +75,7 @@ const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id);
  * Returns:
  *     the width of the given character, in pixels; if font_id is invalid, 0 is returned
  */
-unsigned char bui_font_get_char_width(bui_font_id_e font_id, char ch);
+uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch);
 
 /*
  * Get the pointer to the bitmap for a character in a particular font.

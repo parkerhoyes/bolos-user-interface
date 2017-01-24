@@ -125,8 +125,8 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int x, int y
 	bui_font_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
 }
 
-void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, char *type_buff,
-		unsigned char type_buff_size, unsigned char type_buff_cap, bool animations) {
+void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, char *type_buff, uint8_t type_buff_size,
+		uint8_t type_buff_cap, bool animations) {
 	if (layout_size != 0)
 		os_memcpy(bkb->layout, layout, layout_size);
 	bkb->layout_size = layout_size;
@@ -388,8 +388,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 	}
 }
 
-void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, unsigned char type_buff_size,
-		unsigned char type_buff_cap) {
+void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, uint8_t type_buff_size, uint8_t type_buff_cap) {
 	bkb->type_buff = type_buff;
 	bkb->type_buff_size = type_buff_size;
 	bkb->type_buff_cap = type_buff_cap;

@@ -25,6 +25,7 @@
 #define BUI_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct bui_bitmap_128x32_t {
 	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
@@ -86,7 +87,7 @@ BUI_DECLARE_BITMAP(badge_dashboard);
  * Returns:
  *     the progress made displaying the buffer, or -1 if the buffer has been completely displayed
  */
-signed char bui_display(bui_bitmap_128x32_t *buffer, signed char progress);
+int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress);
 
 /*
  * Fill the provided display buffer with the specified color.

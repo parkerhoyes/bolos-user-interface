@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "os.h"
 #include "os_io_seproxyhal.h"
@@ -46,7 +45,7 @@
  *     a 32 bit integer containing the sequence of bits starting at bit number n * w + o in the bitmap,
  *     truncated to w or 32 bits, whichever is lesser; the bit sequence begins at the most significant bit in the int
  */
-static uint32_t bui_get_bitmap_row_32(const uint8_t *bitmap, uint32_t w, uint32_t n, uint32_t o) {
+static uint32_t bui_get_bitmap_row_32(const unsigned char *bitmap, uint32_t w, uint32_t n, uint32_t o) {
 	uint64_t row = 0;
 	uint32_t fi = n * w + o; // The index of the first bit to retrieve within the entire bitmap
 	w -= o;
@@ -112,7 +111,7 @@ static void bui_rshift_128(uint32_t *arr, uint8_t shift) {
 	arr[0] >>= shift;
 }
 
-signed char bui_display(bui_bitmap_128x32_t *buffer, signed char progress) {
+int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress) {
 	unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
 	unsigned char section[64];
 	for (int i = 0; i < 64; i++)

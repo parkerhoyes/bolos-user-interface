@@ -37,11 +37,11 @@ typedef struct {
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
 typedef struct {
-	unsigned char char_height;
-	unsigned char baseline_height;
-	unsigned char char_kerning;
-	unsigned char first_char; // Character code of the first character in the font bitmap
-	unsigned char last_char; // Character code of the last character in the font bitmap
+	uint8_t char_height;
+	uint8_t baseline_height;
+	uint8_t char_kerning;
+	uint8_t first_char; // Character code of the first character in the font bitmap
+	uint8_t last_char; // Character code of the last character in the font bitmap
 	const bui_font_char_t *chars;
 	const unsigned char *bitmaps; // Array of bitmaps for all characters
 } bui_font_data_t;
@@ -59,7 +59,7 @@ const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id) {
 	return &((const bui_font_t*) PIC(bui_fonts[(int) font_id]))->info;
 }
 
-unsigned char bui_font_get_char_width(bui_font_id_e font_id, char ch) {
+uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch) {
 	if ((int) font_id <= BUI_FONT_NONE || (int) font_id >= BUI_FONT_LAST)
 		return 0;
 	const bui_font_data_t *font_data = &((const bui_font_t*) PIC(bui_fonts[(int) font_id]))->data;

@@ -75,8 +75,8 @@ extern const char bui_bkb_layout_standard[30];
  *                    the user to type in; must be >= 1 and <= 255
  *     animations: true if the keyboard is to be animated, false otherwise
  */
-void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, unsigned int layout_size, char *type_buff,
-		unsigned char type_buff_size, unsigned char type_buff_cap, bool animations);
+void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, char *type_buff, uint8_t type_buff_size,
+		uint8_t type_buff_cap, bool animations);
 
 /*
  * Indicate that the user has chosen a letter on the specified side of the screen for a specified keyboard.
@@ -121,7 +121,6 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer);
  *     type_buff_cap: the maximum capacity of type_buff; also the maximum number of characters the keyboard will allow
  *                    the user to type in; must be >= 1 and <= 255
  */
-void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, unsigned char type_buff_size,
-		unsigned char type_buff_cap);
+void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, uint8_t type_buff_size, uint8_t type_buff_cap);
 
 #endif
