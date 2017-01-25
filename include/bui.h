@@ -28,8 +28,8 @@
 #include <stdint.h>
 
 #define BUI_VER_MAJOR 0
-#define BUI_VER_MINOR 2
-#define BUI_VER_PATCH 1
+#define BUI_VER_MINOR 3
+#define BUI_VER_PATCH 0
 
 typedef struct bui_bitmap_128x32_t {
 	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
