@@ -1,6 +1,7 @@
-# BOLOS User Interface Library
+# BOLOS User Interface Library v0.2.1
 
-This repository contains a user interface library for
+[This repository](https://github.com/parkerhoyes/bolos-user-interface) contains
+a user interface library for
 [BOLOS](http://ledger.readthedocs.io/en/latest/bolos/index.html) applications.
 This library is currently targeted at only the [Ledger Nano
 S](https://github.com/LedgerHQ/ledger-nano-s), though it is possible it may be
