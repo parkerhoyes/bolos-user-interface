@@ -1,5 +1,5 @@
 /*
- * License for the BOLOS User Interface project, originally found here:
+ * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
  * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
@@ -24,6 +24,10 @@
 #ifndef BUI_FONT_H_
 #define BUI_FONT_H_
 
+#include <stdint.h>
+
+#include "bui.h"
+
 typedef enum {
 	BUI_FONT_NONE = -1, // Not a real font
 	BUI_FONT_COMIC_SANS_MS_20,
@@ -45,11 +49,11 @@ typedef enum {
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
 typedef struct {
-	unsigned char char_height;
-	unsigned char baseline_height;
-	unsigned char char_kerning;
-	unsigned char first_char; // Character code of the first character with a bitmap in this font
-	unsigned char last_char; // Character code of the last character with a bitmap in this font
+	uint8_t char_height;
+	uint8_t baseline_height;
+	uint8_t char_kerning;
+	uint8_t first_char; // Character code of the first character with a bitmap in this font
+	uint8_t last_char; // Character code of the last character with a bitmap in this font
 } bui_font_info_t;
 
 /*
@@ -71,7 +75,7 @@ const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id);
  * Returns:
  *     the width of the given character, in pixels; if font_id is invalid, 0 is returned
  */
-unsigned char bui_font_get_char_width(bui_font_id_e font_id, unsigned char ch);
+uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch);
 
 /*
  * Get the pointer to the bitmap for a character in a particular font.
@@ -84,6 +88,43 @@ unsigned char bui_font_get_char_width(bui_font_id_e font_id, unsigned char ch);
  * Returns:
  *     the pointer to the bitmap for the specified character in the specified font or NULL if font_id is invalid
  */
-const unsigned char* bui_font_get_char_bitmap(bui_font_id_e font_id, unsigned char ch, int *w_dest);
+const unsigned char* bui_font_get_char_bitmap(bui_font_id_e font_id, char ch, int *w_dest);
+
+/*
+* Draw a character in the specified font onto the bottom display buffer. Any part of the character out of bounds of the
+* display will not be drawn. The coordinates provided determine the position of the text anchor. The actual bounds the
+* text is drawn within are determined by the anchor and the alignment. The alignment determines where, in the text's
+* bounds, the anchor is located. For example, an alignment of BUI_RIGHT_TOP will place the anchor at the top-most,
+* right-most position of the text's boundaries. Note that for purposes of alignment, the character's boundaries are
+* considered to extend from the font's baseline to the ascender height.
+*
+* Args:
+*     buffer: the display buffer onto which to draw the character
+*     ch: the character code of the character to be drawn
+*     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+*     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+*     alignment: the position of the anchor within the text boundaries
+*     font_id: the ID of the font to be used to render the character
+*/
+void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_dir_e alignment, bui_font_id_e font_id);
+
+/*
+* Draw a string in the specified font onto the bottom display buffer. Any part of the string out of bounds of the
+* buffer will not be drawn (the string will not wrap). The coordinates provided determine the position of the text
+* anchor. The actual bounds the text is drawn within are determined by the anchor and the alignment. The alignment
+* determines where, in the text's bounds, the anchor is located. For example, an alignment of BUI_RIGHT_TOP will place
+* the anchor at the top-most, right-most position of the text's boundaries. Note that for purposes of alignment, the
+* character's boundaries are considered to extend from the font's baseline to the ascender height.
+*
+* Args:
+*     buffer: the display buffer onto which to draw the string
+*     str: the null-terminated string to be drawn; may not be NULL
+*     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+*     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+*     alignment: the position of the anchor within the text boundaries
+*     font_id: the ID of the font to be used to render the string
+*/
+void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int x, int y, bui_dir_e alignment,
+		bui_font_id_e font_id);
 
 #endif

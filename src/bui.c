@@ -1,5 +1,5 @@
 /*
- * License for the BOLOS User Interface project, originally found here:
+ * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
  * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "os.h"
 #include "os_io_seproxyhal.h"
@@ -46,7 +45,7 @@
  *     a 32 bit integer containing the sequence of bits starting at bit number n * w + o in the bitmap,
  *     truncated to w or 32 bits, whichever is lesser; the bit sequence begins at the most significant bit in the int
  */
-static uint32_t bui_get_bitmap_row_32(const uint8_t *bitmap, uint32_t w, uint32_t n, uint32_t o) {
+static uint32_t bui_get_bitmap_row_32(const unsigned char *bitmap, uint32_t w, uint32_t n, uint32_t o) {
 	uint64_t row = 0;
 	uint32_t fi = n * w + o; // The index of the first bit to retrieve within the entire bitmap
 	w -= o;
@@ -112,7 +111,7 @@ static void bui_rshift_128(uint32_t *arr, uint8_t shift) {
 	arr[0] >>= shift;
 }
 
-signed char bui_display(bui_bitmap_128x32_t *buffer, signed char progress) {
+int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress) {
 	unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
 	unsigned char section[64];
 	for (int i = 0; i < 64; i++)
@@ -264,84 +263,5 @@ void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, i
 				dest_row += 4;
 			}
 		}
-	}
-}
-
-void bui_draw_char(bui_bitmap_128x32_t *buffer, unsigned char ch, int x, int y, unsigned char alignment,
-		bui_font_id_e font_id) {
-	if (x >= 128 || y >= 32)
-		return;
-	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	int h = font_info->char_height;
-	int w;
-	const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
-	switch (alignment & BUI_HORIZONTAL_ALIGN_MASK) {
-	case BUI_HORIZONTAL_ALIGN_LEFT:
-		break;
-	case BUI_HORIZONTAL_ALIGN_CENTER:
-		x -= w / 2;
-		if (w % 2 == 1)
-			x -= 1;
-		break;
-	case BUI_HORIZONTAL_ALIGN_RIGHT:
-		x -= w;
-		break;
-	}
-	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
-	case BUI_VERTICAL_ALIGN_TOP:
-		break;
-	case BUI_VERTICAL_ALIGN_CENTER:
-		y -= h / 2;
-		if (h % 2 == 1)
-			y -= 1;
-		break;
-	case BUI_VERTICAL_ALIGN_BOTTOM:
-		y -= h;
-		break;
-	}
-	bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, h);
-}
-
-void bui_draw_string(bui_bitmap_128x32_t *buffer, const unsigned char *str, int x, int y, unsigned char alignment,
-		bui_font_id_e font_id) {
-	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	switch (alignment & BUI_VERTICAL_ALIGN_MASK) {
-	case BUI_VERTICAL_ALIGN_TOP:
-		break;
-	case BUI_VERTICAL_ALIGN_CENTER:
-		y -= font_info->baseline_height / 2;
-		if (font_info->baseline_height % 2 == 1)
-			y -= 1;
-		break;
-	case BUI_VERTICAL_ALIGN_BOTTOM:
-		y -= font_info->baseline_height;
-		break;
-	}
-	if (y >= 32 || y + font_info->char_height <= 0)
-		return;
-	if ((alignment & BUI_HORIZONTAL_ALIGN_MASK) != BUI_HORIZONTAL_ALIGN_LEFT) {
-		int w = 0;
-		for (const unsigned char *s = str; *s != '\0'; s++) {
-			w += bui_font_get_char_width(font_id, *s);
-			w += font_info->char_kerning;
-		}
-		if ((alignment & BUI_HORIZONTAL_ALIGN_MASK) == BUI_HORIZONTAL_ALIGN_CENTER) {
-			x -= w / 2;
-			if (w % 2 == 1)
-				x -= 1;
-		} else {
-			x -= w;
-		}
-		if (x + w <= 0)
-			return;
-	}
-	if (x >= 128)
-		return;
-	for (; *str != '\0' && x < 128; str++) {
-		int w;
-		const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
-		bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, font_info->char_height);
-		x += w;
-		x += font_info->char_kerning;
 	}
 }

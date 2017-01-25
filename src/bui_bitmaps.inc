@@ -1,5 +1,5 @@
 /*
- * License for the BOLOS User Interface project, originally found here:
+ * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
  * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
@@ -13,11 +13,11 @@
  * freely, subject to the following restrictions:
  *
  * 1. The origin of this software must not be misrepresented; you must not claim
- *	that you wrote the original software. If you use this software in a
- *	product, an acknowledgment in the product documentation would be
- *	appreciated but is not required.
+ *    that you wrote the original software. If you use this software in a
+ *    product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
  * 2. Altered source versions must be plainly marked as such, and must not be
- *	misrepresented as being the original software.
+ *    misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
@@ -64,6 +64,30 @@ const unsigned char bui_bitmap_down_w = 7;
 const unsigned char bui_bitmap_down_h = 4;
 const unsigned char bui_bitmap_down_bitmap[] = {
 	0x10, 0x51, 0x14, 0x10,
+};
+
+const unsigned char bui_bitmap_left_filled_w = 4;
+const unsigned char bui_bitmap_left_filled_h = 7;
+const unsigned char bui_bitmap_left_filled_bitmap[] = {
+	0x8C, 0xEF, 0xEC, 0x80,
+};
+
+const unsigned char bui_bitmap_right_filled_w = 4;
+const unsigned char bui_bitmap_right_filled_h = 7;
+const unsigned char bui_bitmap_right_filled_bitmap[] = {
+	0x13, 0x7F, 0x73, 0x10,
+};
+
+const unsigned char bui_bitmap_up_filled_w = 7;
+const unsigned char bui_bitmap_up_filled_h = 4;
+const unsigned char bui_bitmap_up_filled_bitmap[] = {
+	0xFE, 0xF8, 0xE0, 0x80,
+};
+
+const unsigned char bui_bitmap_down_filled_w = 7;
+const unsigned char bui_bitmap_down_filled_h = 4;
+const unsigned char bui_bitmap_down_filled_bitmap[] = {
+	0x10, 0x71, 0xF7, 0xF0,
 };
 
 const unsigned char bui_bitmap_ledger_mini_w = 16;
