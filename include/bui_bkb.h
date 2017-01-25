@@ -44,8 +44,9 @@ typedef struct {
 	uint8_t bits_typed; // The sequence of "bits" inputted by the user, starting at the MSB (0 is left, 1 is right)
 	uint8_t bits_typed_size; // The number of "bits" inputted by the user (the number of left / right choices)
 	char option; // Specifies the active sub-menu for a particular set of characters; '\0' is none
-	uint8_t keys_tick; // The animation ticker for key animations; 255 is no animations, KEYS_ANIMATION_LEN is done
-	uint8_t cursor_tick; // The animation ticker for the cursor blink animation
+	uint8_t keys_tick; // The animation ticker for key animations, in 10 ms increments; 255 is no animations,
+	                   // KEYS_ANIMATION_LEN is done
+	uint8_t cursor_tick; // The animation ticker for the cursor blink animation, in 10 ms increments
 } bui_bkb_bkb_t;
 
 extern const char bui_bkb_layout_alphabetic[26];
@@ -92,13 +93,16 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
 
 /*
  * Indicate that a single animation tick has passed. If animations for the specified keyboard are disabled, this
- * function should never be called. If they are enabled, this function should be called at a rate of 25 Hz (and
- * preferrably the keyboard should be drawn at the same rate).
+ * function should never be called. If they are enabled, it is recommended that this function is called at a rate of 25
+ * Hz (and preferrably the keyboard should be drawn at the same rate), passing 4 as the value of elapsed.
  *
+ * Args:
+ *     bkb: the keyboard, with animations enabled
+ *     elapsed: the time elapsed since the last call to this function, in 10 ms increments (value of 4 recommended)
  * Returns:
  *     true if the tick may have resulted in a change in the way the keyboard is drawn, false otherwise
  */
-bool bui_bkb_tick(bui_bkb_bkb_t *bkb);
+bool bui_bkb_tick(bui_bkb_bkb_t *bkb, uint32_t elapsed);
 
 /*
  * Draw the specified keyboard onto the specified display buffer.
