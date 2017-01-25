@@ -336,7 +336,6 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 		uint8_t righti = lefti + leftn;
 		uint8_t rightn = charsn / 2;
 		uint8_t prev_righti = prev_lefti + prev_leftn;
-		uint8_t prev_rightn = prev_charsn / 2;
 
 		// Draw keys on left side
 		for (uint8_t i = 0; i < leftn; i++) {
