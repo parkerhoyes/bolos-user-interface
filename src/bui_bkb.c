@@ -34,8 +34,8 @@
 #define CEIL_DIV(x, y) (1 + (((x) - 1) / (y)))
 #define NTH_BIT(n, i) (((n) >> (7 - (i))) & 1) // Only to be used with uint8_t
 
-#define KEYS_ANIMATION_LEN 9 // The duration of the keys animation, in 40 ms increments
-#define CURSOR_ANIMATION_INT 25 // Half the period of the cursor blink animation, in 40 ms increments
+#define KEYS_ANIMATION_LEN 36 // The duration of the keys animation, in 10 ms increments
+#define CURSOR_ANIMATION_INT 100 // Half the period of the cursor blink animation, in 10 ms increments
 
 static const unsigned char bitmap_ellipsis_bitmap[] = {
 	0x00, 0x2A, 0x00, 0x00, 0x00,
@@ -231,15 +231,21 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 	return 0x1FF; // No character was chosen
 }
 
-bool bui_bkb_tick(bui_bkb_bkb_t *bkb) {
+bool bui_bkb_tick(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
+	if (elapsed == 0)
+		return false;
 	bool change = false;
 	if (bkb->keys_tick < KEYS_ANIMATION_LEN) {
-		bkb->keys_tick += 1;
+		if (elapsed >= KEYS_ANIMATION_LEN - bkb->keys_tick)
+			bkb->keys_tick = KEYS_ANIMATION_LEN;
+		else
+			bkb->keys_tick += elapsed;
 		change = true;
 	}
-	bkb->cursor_tick += 1;
+	bool last_cursor = bkb->cursor_tick < CURSOR_ANIMATION_INT;
+	bkb->cursor_tick += elapsed % (CURSOR_ANIMATION_INT * 2);
 	bkb->cursor_tick %= CURSOR_ANIMATION_INT * 2;
-	if (bkb->cursor_tick == 0 || bkb->cursor_tick == CURSOR_ANIMATION_INT)
+	if (last_cursor != (bool) (bkb->cursor_tick < CURSOR_ANIMATION_INT))
 		change = true;
 	return change;
 }
@@ -391,4 +397,8 @@ void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, uint8_t type_buf
 	bkb->type_buff = type_buff;
 	bkb->type_buff_size = type_buff_size;
 	bkb->type_buff_cap = type_buff_cap;
+}
+
+uint8_t bui_bkb_get_type_buff_size(const bui_bkb_bkb_t *bkb) {
+	return bkb->type_buff_size;
 }

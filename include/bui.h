@@ -28,7 +28,7 @@
 #include <stdint.h>
 
 #define BUI_VER_MAJOR 0
-#define BUI_VER_MINOR 3
+#define BUI_VER_MINOR 4
 #define BUI_VER_PATCH 0
 
 typedef struct bui_bitmap_128x32_t {
