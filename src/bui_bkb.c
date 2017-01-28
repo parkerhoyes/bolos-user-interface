@@ -398,3 +398,7 @@ void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, uint8_t type_buf
 	bkb->type_buff_size = type_buff_size;
 	bkb->type_buff_cap = type_buff_cap;
 }
+
+uint8_t bui_bkb_get_type_buff_size(const bui_bkb_bkb_t *bkb) {
+	return bkb->type_buff_size;
+}

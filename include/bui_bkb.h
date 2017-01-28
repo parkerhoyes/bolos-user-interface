@@ -127,4 +127,14 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer);
  */
 void bui_bkb_set_type_buff(bui_bkb_bkb_t *bkb, char *type_buff, uint8_t type_buff_size, uint8_t type_buff_cap);
 
+/*
+ * Get the current size of the type buffer (the number of characters currently typed into the keyboard's textbox).
+ *
+ * Args:
+ *     bkb: the keyboard
+ * Returns:
+ *     the current size of the type buffer
+ */
+uint8_t bui_bkb_get_type_buff_size(const bui_bkb_bkb_t *bkb);
+
 #endif
