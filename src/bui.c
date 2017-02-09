@@ -206,12 +206,12 @@ void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, i
 	// Shift source and destination coordinates such that the destination rectangle is entirely contained in the display
 	if (dest_x < 0) {
 		src_x -= dest_x;
-		w -= dest_x;
+		w += dest_x;
 		dest_x = 0;
 	}
 	if (dest_y < 0) {
 		src_y -= dest_y;
-		h -= dest_y;
+		h += dest_y;
 		dest_y = 0;
 	}
 	// Truncate width and height to fit within screen
@@ -228,7 +228,7 @@ void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, i
 		// Load data from the bitmap for the current row into a buffer and align it
 		uint32_t source_row[4] = {0, 0, 0, 0};
 		for (uint8_t j = 0; j <= (w - 1) / 32; j++) {
-			source_row[j] = bui_get_bitmap_row_32(bitmap, bitmap_w, src_y + i - dest_y, src_x + j * 32);
+			source_row[j] = bui_get_bitmap_row_32(bitmap, bitmap_w, i - dest_y, src_x + j * 32);
 		}
 		bui_rshift_128(source_row, dest_x);
 		uint8_t *dest_row = &buffer->bitmap[i * 16];

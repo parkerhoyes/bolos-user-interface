@@ -95,18 +95,18 @@ void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_
 	int h = font_info->char_height;
 	int w;
 	const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
-	if (BUI_DIR_IS_HTL_CENTER(alignment)) {
+	if (bui_dir_is_htl_center(alignment)) {
 		x -= w / 2;
 		if (w % 2 == 1)
 			x -= 1;
-	} else if (BUI_DIR_IS_RIGHT(alignment)) {
+	} else if (bui_dir_is_right(alignment)) {
 		x -= w;
 	}
-	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
+	if (bui_dir_is_vtl_center(alignment)) {
 		y -= h / 2;
 		if (h % 2 == 1)
 			y -= 1;
-	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
+	} else if (bui_dir_is_bottom(alignment)) {
 		y -= h;
 	}
 	bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, h);
@@ -115,22 +115,22 @@ void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_
 void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int x, int y, bui_dir_e alignment,
 		bui_font_id_e font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
+	if (bui_dir_is_vtl_center(alignment)) {
 		y -= font_info->baseline_height / 2;
 		if (font_info->baseline_height % 2 == 1)
 			y -= 1;
-	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
+	} else if (bui_dir_is_bottom(alignment)) {
 		y -= font_info->baseline_height;
 	}
 	if (y >= 32 || y + font_info->char_height <= 0)
 		return;
-	if (!BUI_DIR_IS_LEFT(alignment)) {
+	if (!bui_dir_is_left(alignment)) {
 		int w = 0;
 		for (const char *s = str; *s != '\0'; s++) {
 			w += bui_font_get_char_width(font_id, *s);
 			w += font_info->char_kerning;
 		}
-		if (BUI_DIR_IS_HTL_CENTER(alignment)) {
+		if (bui_dir_is_htl_center(alignment)) {
 			x -= w / 2;
 			if (w % 2 == 1)
 				x -= 1;

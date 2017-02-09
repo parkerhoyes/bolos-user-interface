@@ -1,4 +1,4 @@
-# BOLOS User Interface Library v0.4.0
+# BOLOS User Interface Library v0.5.0
 
 [This repository](https://github.com/parkerhoyes/bolos-user-interface) contains
 a user interface library for
@@ -49,10 +49,23 @@ specify the fonts that are to be included.
 The binary keyboard module (which defines all symbols with the prefix
 `bui_bkb_`) implements a "keyboard" that allows users to type letters, digits,
 symbols, and punctuation on the Nano S using only the two buttons on the device.
-I have created a [demo of the binary
+Note that this module requires the Lucida Console 8 font from the font module. I
+have created a [demo of the binary
 keyboard](https://github.com/parkerhoyes/nanos-app-binarykbdemo) which is a good
-starting point to learn how to use it in your project. Note that this module
-requires the Lucida Console 8 font from the font module.
+starting point to learn how to use it in your project. The binary keyboard is
+also used in the [demo of the menu
+module](https://github.com/parkerhoyes/nanos-app-menudemo).
+
+### Menu Module
+
+The menu module (which defines all symbols with the prefix `bui_menu_`)
+implements a "scrollable" list of display components. The menu supports optional
+smooth scrolling animations (it uses an exponential curve to animate the
+scroll). Elements may be either 128x12 or 128x32 pixels in size. When
+initializing the menu, a callback is provided which is used to render the menu's
+elements. I have created a [demo of the menu
+module](https://github.com/parkerhoyes/nanos-app-menudemo) which is a good
+starting point to learn how to use it in your project.
 
 ## Examples
 
@@ -61,8 +74,9 @@ https://github.com/parkerhoyes/nanos-app-snake. This is an implementation of the
 popular game Snake for the Nano S that uses this library to render its user
 interface.
 
-A demonstration of the binary keyboard implemented by this library is available
-here: https://github.com/parkerhoyes/nanos-app-binarykbdemo.
+The [menu module demo](https://github.com/parkerhoyes/nanos-app-menudemo) also
+provides a good demonstration of how to make more traditional vertical page
+style apps.
 
 If you use this library in your project, please feel free to email me (or submit
 a pull request) and I'll link to it in this README.

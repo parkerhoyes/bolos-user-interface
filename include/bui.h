@@ -28,20 +28,20 @@
 #include <stdint.h>
 
 #define BUI_VER_MAJOR 0
-#define BUI_VER_MINOR 4
+#define BUI_VER_MINOR 5
 #define BUI_VER_PATCH 0
-
-typedef struct bui_bitmap_128x32_t {
-	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
-	// right to left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
-	unsigned char bitmap[512];
-} bui_bitmap_128x32_t;
 
 /*
  * Bitmaps in this library are represented as sequences of bits, each representing the color of a single pixel (a 1 bit
  * represents the foreground color, and a 0 bit represents the background color). Bitmaps are stored big-endian (first
  * bytes in the sequence appear in lower memory addresses), rows preferred, from bottom to top and from right to left.
  */
+
+typedef struct bui_bitmap_128x32_t {
+	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
+	// right to left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
+	unsigned char bitmap[512];
+} bui_bitmap_128x32_t;
 
 typedef enum {
 	BUI_DIR_LEFT         = 0b00000001,
@@ -55,12 +55,47 @@ typedef enum {
 	BUI_DIR_RIGHT_BOTTOM = (int) BUI_DIR_RIGHT | (int) BUI_DIR_BOTTOM,
 } bui_dir_e;
 
-#define BUI_DIR_IS_LEFT(dir) (((int) (dir) & (int) BUI_DIR_LEFT) != 0)
-#define BUI_DIR_IS_RIGHT(dir) (((int) (dir) & (int) BUI_DIR_RIGHT) != 0)
-#define BUI_DIR_IS_TOP(dir) (((int) (dir) & (int) BUI_DIR_TOP) != 0)
-#define BUI_DIR_IS_BOTTOM(dir) (((int) (dir) & (int) BUI_DIR_BOTTOM) != 0)
-#define BUI_DIR_IS_HTL_CENTER(dir) (((int) (dir) & ~((int) BUI_DIR_TOP | (int) BUI_DIR_BOTTOM)) == 0)
-#define BUI_DIR_IS_VTL_CENTER(dir) (((int) (dir) & ~((int) BUI_DIR_LEFT | (int) BUI_DIR_RIGHT)) == 0)
+/*
+ * Returns true if dir is on the left edge, false otherwise.
+ */
+static inline bool bui_dir_is_left(bui_dir_e dir) {
+	return (dir & BUI_DIR_LEFT) != 0;
+}
+
+/*
+ * Returns true if dir is on the right edge, false otherwise.
+ */
+static inline bool bui_dir_is_right(bui_dir_e dir) {
+	return (dir & BUI_DIR_RIGHT) != 0;
+}
+
+/*
+ * Returns true if dir is on the top edge, false otherwise.
+ */
+static inline bool bui_dir_is_top(bui_dir_e dir) {
+	return (dir & BUI_DIR_TOP) != 0;
+}
+
+/*
+ * Returns true if dir is on the bottom edge, false otherwise.
+ */
+static inline bool bui_dir_is_bottom(bui_dir_e dir) {
+	return (dir & BUI_DIR_BOTTOM) != 0;
+}
+
+/*
+ * Returns true if dir is horizontally centered, false otherwise.
+ */
+static inline bool bui_dir_is_htl_center(bui_dir_e dir) {
+	return (dir & (BUI_DIR_LEFT | BUI_DIR_RIGHT)) == 0;
+}
+
+/*
+ * Returns true if dir is vertically centered, false otherwise.
+ */
+static inline bool bui_dir_is_vtl_center(bui_dir_e dir) {
+	return (dir & (BUI_DIR_TOP | BUI_DIR_BOTTOM)) == 0;
+}
 
 #define BUI_DECLARE_BITMAP(name) \
 		extern const unsigned char bui_bitmap_ ## name ## _w; \
