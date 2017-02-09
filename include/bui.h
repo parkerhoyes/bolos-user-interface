@@ -28,7 +28,7 @@
 #include <stdint.h>
 
 #define BUI_VER_MAJOR 0
-#define BUI_VER_MINOR 4
+#define BUI_VER_MINOR 5
 #define BUI_VER_PATCH 0
 
 /*

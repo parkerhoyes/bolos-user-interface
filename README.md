@@ -1,4 +1,4 @@
-# BOLOS User Interface Library v0.4.0
+# BOLOS User Interface Library v0.5.0
 
 [This repository](https://github.com/parkerhoyes/bolos-user-interface) contains
 a user interface library for
