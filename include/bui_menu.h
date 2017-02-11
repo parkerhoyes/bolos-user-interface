@@ -29,92 +29,77 @@
 
 #include "bui.h"
 
-typedef struct bui_menu_menu_t_ bui_menu_menu_t;
+typedef struct bui_menu_menu_t bui_menu_menu_t;
 
-typedef struct {
-	// A big-endian sequence of bits storing the sizes of corresponding elements; 0 is regular size (128x12) and 1 is
-	// full size (128x32)
-	uint32_t sizes;
-	// The number of elements in the menu; must be <= 32
-	uint8_t count;
-} bui_menu_elem_data_t;
+/*
+ * Get the height, in pixels, of a menu element (the width is assumed to be 128).
+ *
+ * Args:
+ *     menu: the menu
+ *     i: the index of the menu element
+ * Returns:
+ *     the height, in pixels, of the menu element; must be >= 1 and <= 32
+ */
+typedef uint8_t (*bui_menu_elem_size_callback_t)(const bui_menu_menu_t *menu, uint8_t i);
 
+/*
+ * Draw a menu element.
+ *
+ * Args:
+ *     menu: the menu
+ *     i: the index of the menu element
+ *     buffer: the buffer onto which the element is to be drawn
+ *     y: the y-coordinate of the top of the destination in the buffer onto which the element is to be drawn
+ */
 typedef void (*bui_menu_elem_draw_callback_t)(const bui_menu_menu_t *menu, uint8_t i, bui_bitmap_128x32_t *buffer,
 		int y);
 
-// NOTE: The definition of this struct is considered internal. It may be changed between versions without warning, and
-// the struct's data should never be accessed or modified by code external to this module (bui_menu).
-struct bui_menu_menu_t_ {
-	// The size of each element and the number of elements in the menu
-	bui_menu_elem_data_t elem_data;
+// NOTE: The definition of all fields in this struct except for the callbacks are considered internal. All other fields
+// may be changed between versions without warning, and all fields other than the callback fields should never be
+// accessed or modified by code external to this module (bui_menu).
+struct bui_menu_menu_t {
+	// The number of elements in the menu
+	uint8_t count;
 	// The index of the focused element
-	uint8_t focus;
-	// The callback used to draw menu elements
-	bui_menu_elem_draw_callback_t elem_draw_callback;
-	// The current y-coordinate of the viewport, relative to the target y-coordinate (if animations are enabled)
-	int16_t scroll_pos;
+	uint8_t focus : 8;
 	// True if animations are enabled, false otherwise
 	bool animations : 1;
 	// The number of milliseconds elapsed but not processed by the animation algorithm
-	uint8_t elapsed : 7;
+	uint8_t elapsed : 5;
+	// The current y-coordinate of the viewport, relative to the target y-coordinate (if animations are enabled)
+	int32_t scroll_pos : 18;
+	// The callback used to get the size of menu elements
+	bui_menu_elem_size_callback_t elem_size_callback;
+	// The callback used to draw menu elements
+	bui_menu_elem_draw_callback_t elem_draw_callback;
 };
 
 /*
- * Initialize a preallocated menu with the specified parameters.
+ * Initialize a preallocated menu with the specified parameters. The callback fields in the menu must have already been
+ * set before calling this function (the fields menu->elem_size_callback and menu->elem_draw_callback).
  *
  * Args:
- *     menu: the preallocated menu
- *     elem_data: the number of elements and the size of each element in the menu
- *     focus: the index of the element to be initially focused in the menu; must be < elem_data.count if elem_data.count
- *            != 0
+ *     menu: the preallocated menu, with menu->elem_size_callback and menu->elem_draw_callback already set
+ *     count: the number of elements initially in the menu
+ *     focus: the index of the element to be initially focused in the menu; must be < the number of elements in the
+ *            menu, if there are any elements in the menu
+ *     elem_size_callback: the callback used to get the size of the elements in the menu; the values produced by this
+ *                         function must be consistent unless bui_menu_change_elems(...) is called
  *     elem_draw_callback: the callback to be used to draw the elements in the menu
  *     animations: true if scrolling the menu should be animated, false otherwise
  */
-void bui_menu_init(bui_menu_menu_t *menu, bui_menu_elem_data_t elem_data, uint8_t focus,
-		bui_menu_elem_draw_callback_t elem_draw_callback, bool animations);
+void bui_menu_init(bui_menu_menu_t *menu, uint8_t count, uint8_t focus, bool animations);
 
 /*
- * Get the number of elements and the size of each element in the menu.
+ * Indicate that either the number of elements in the menu has changed, or the size of any of the elements in the menu
+ * has changed. This function must be called if either of these properties are changed. Calling this function resets
+ * the scroll animations, as if by calling bui_menu_animate(menu, 0xFFFFFFFF).
  *
  * Args:
  *     menu: the menu
- * Returns:
- *     the number of elements and the size of each element in the menu
+ *     count: the new number of elements in the menu (must be <= 255), or 0xFFFF if the number of elements is unchanged
  */
-bui_menu_elem_data_t bui_menu_get_elem_data(const bui_menu_menu_t *menu);
-
-/*
- * Set the number of elements and the size of each element in the menu. If animations are enabled, the progress of the
- * animations are reset by calling this function.
- *
- * Args:
- *     menu: the menu
- *     elem_data: the number of elements and the size of each element in the menu
- */
-void bui_menu_set_elem_data(bui_menu_menu_t *menu, bui_menu_elem_data_t elem_data);
-
-/*
- * Modify the menu's element data such that an element of the specified size is inserted at the specified index, and all
- * subsequent elements are shifted over to greater indices; the size of the menu is increased by 1. The size of the menu
- * must initially be <= 31.
- *
- * Args:
- *     menu: the menu
- *     i: the index at which the element is to be inserted; must be <= the size of the menu
- *     size: the size of the inserted element; false is regular size (128x12) and true is full size (128x32)
- */
-void bui_menu_insert_elem(bui_menu_menu_t *menu, uint8_t i, bool size);
-
-/*
- * Modify the menu's element data such that the element at the specified index is removed and all subsequent elements
- * are shifted to lesser indices to fill the gap; the size of the menu is decreased by 1. The size of the menu must
- * initially be >= 1.
- *
- * Args:
- *     menu: the menu
- *     i: the index of the element to be removed; must be < the size of the menu
- */
-void bui_menu_remove_elem(bui_menu_menu_t *menu, uint8_t i);
+void bui_menu_change_elems(bui_menu_menu_t *menu, uint16_t count);
 
 /*
  * Scroll the menu by one element in either the up or down direction. If the menu cannot scroll any further in the
@@ -155,8 +140,8 @@ void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer);
  * Args:
  *     menu: the menu
  * Returns:
- *     the index of the currently focused element; if there are no elements, 0xFF is returned
+ *     the index of the currently focused element; if there are no elements, 0xFFFF is returned
  */
-uint8_t bui_menu_get_focused(const bui_menu_menu_t *menu);
+uint16_t bui_menu_get_focused(const bui_menu_menu_t *menu);
 
 #endif
