@@ -123,32 +123,92 @@ static inline bool bui_dir_is_vtl_center(bui_dir_e dir) {
 		extern const uint8_t bui_bitmap_ ## name ## _h; \
 		extern const uint8_t bui_bitmap_ ## name ## _bitmap[];
 
-BUI_DECLARE_BITMAP(check);
-#define BUI_BITMAP_CHECK ((bui_const_bitmap_t) { .w = bui_bitmap_check_w, .h = bui_bitmap_check_h, .bb = bui_bitmap_check_bitmap })
-BUI_DECLARE_BITMAP(cross);
-#define BUI_BITMAP_CROSS ((bui_const_bitmap_t) { .w = bui_bitmap_cross_w, .h = bui_bitmap_cross_h, .bb = bui_bitmap_cross_bitmap })
-BUI_DECLARE_BITMAP(left);
-#define BUI_BITMAP_LEFT ((bui_const_bitmap_t) { .w = bui_bitmap_left_w, .h = bui_bitmap_left_h, .bb = bui_bitmap_left_bitmap })
-BUI_DECLARE_BITMAP(right);
-#define BUI_BITMAP_RIGHT ((bui_const_bitmap_t) { .w = bui_bitmap_right_w, .h = bui_bitmap_right_h, .bb = bui_bitmap_right_bitmap })
-BUI_DECLARE_BITMAP(up);
-#define BUI_BITMAP_UP ((bui_const_bitmap_t) { .w = bui_bitmap_up_w, .h = bui_bitmap_up_h, .bb = bui_bitmap_up_bitmap })
-BUI_DECLARE_BITMAP(down);
-#define BUI_BITMAP_DOWN ((bui_const_bitmap_t) { .w = bui_bitmap_down_w, .h = bui_bitmap_down_h, .bb = bui_bitmap_down_bitmap })
-BUI_DECLARE_BITMAP(left_filled);
-#define BUI_BITMAP_LEFT_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_left_filled_w, .h = bui_bitmap_left_filled_h, .bb = bui_bitmap_left_filled_bitmap })
-BUI_DECLARE_BITMAP(right_filled);
-#define BUI_BITMAP_RIGHT_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_right_filled_w, .h = bui_bitmap_right_filled_h, .bb = bui_bitmap_right_filled_bitmap })
-BUI_DECLARE_BITMAP(up_filled);
-#define BUI_BITMAP_UP_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_up_filled_w, .h = bui_bitmap_up_filled_h, .bb = bui_bitmap_up_filled_bitmap })
-BUI_DECLARE_BITMAP(down_filled);
-#define BUI_BITMAP_DOWN_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_down_filled_w, .h = bui_bitmap_down_filled_h, .bb = bui_bitmap_down_filled_bitmap })
-BUI_DECLARE_BITMAP(ledger_mini);
-#define BUI_BITMAP_LEDGER_MINI ((bui_const_bitmap_t) { .w = bui_bitmap_ledger_mini_w, .h = bui_bitmap_ledger_mini_h, .bb = bui_bitmap_ledger_mini_bitmap })
+BUI_DECLARE_BITMAP(icon_check);
+#define BUI_BITMAP_ICON_CHECK ((bui_const_bitmap_t) { .w = bui_bitmap_icon_check_w, .h = bui_bitmap_icon_check_h, \
+		.bb = bui_bitmap_icon_check_bitmap })
+BUI_DECLARE_BITMAP(icon_cross);
+#define BUI_BITMAP_ICON_CROSS ((bui_const_bitmap_t) { .w = bui_bitmap_icon_cross_w, .h = bui_bitmap_icon_cross_h, \
+		.bb = bui_bitmap_icon_cross_bitmap })
+BUI_DECLARE_BITMAP(icon_left);
+#define BUI_BITMAP_ICON_LEFT ((bui_const_bitmap_t) { .w = bui_bitmap_icon_left_w, .h = bui_bitmap_icon_left_h, \
+		.bb = bui_bitmap_icon_left_bitmap })
+BUI_DECLARE_BITMAP(icon_right);
+#define BUI_BITMAP_ICON_RIGHT ((bui_const_bitmap_t) { .w = bui_bitmap_icon_right_w, .h = bui_bitmap_icon_right_h, \
+		.bb = bui_bitmap_icon_right_bitmap })
+BUI_DECLARE_BITMAP(icon_up);
+#define BUI_BITMAP_ICON_UP ((bui_const_bitmap_t) { .w = bui_bitmap_icon_up_w, .h = bui_bitmap_icon_up_h, \
+		.bb = bui_bitmap_icon_up_bitmap })
+BUI_DECLARE_BITMAP(icon_down);
+#define BUI_BITMAP_ICON_DOWN ((bui_const_bitmap_t) { .w = bui_bitmap_icon_down_w, .h = bui_bitmap_icon_down_h, \
+		.bb = bui_bitmap_icon_down_bitmap })
+BUI_DECLARE_BITMAP(icon_left_filled);
+#define BUI_BITMAP_ICON_LEFT_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_icon_left_filled_w, \
+		.h = bui_bitmap_icon_left_filled_h, .bb = bui_bitmap_icon_left_filled_bitmap })
+BUI_DECLARE_BITMAP(icon_right_filled);
+#define BUI_BITMAP_ICON_RIGHT_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_icon_right_filled_w, \
+		.h = bui_bitmap_icon_right_filled_h, .bb = bui_bitmap_icon_right_filled_bitmap })
+BUI_DECLARE_BITMAP(icon_up_filled);
+#define BUI_BITMAP_ICON_UP_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_icon_up_filled_w, \
+		.h = bui_bitmap_icon_up_filled_h, .bb = bui_bitmap_icon_up_filled_bitmap })
+BUI_DECLARE_BITMAP(icon_down_filled);
+#define BUI_BITMAP_ICON_DOWN_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_icon_down_filled_w, \
+		.h = bui_bitmap_icon_down_filled_h, .bb = bui_bitmap_icon_down_filled_bitmap })
+BUI_DECLARE_BITMAP(icon_plus);
+#define BUI_BITMAP_ICON_PLUS ((bui_const_bitmap_t) { .w = bui_bitmap_icon_plus_w, .h = bui_bitmap_icon_plus_h, \
+		.bb = bui_bitmap_icon_plus_bitmap })
+BUI_DECLARE_BITMAP(icon_less);
+#define BUI_BITMAP_ICON_LESS ((bui_const_bitmap_t) { .w = bui_bitmap_icon_less_w, .h = bui_bitmap_icon_less_h, \
+		.bb = bui_bitmap_icon_less_bitmap })
+BUI_DECLARE_BITMAP(logo_ledger_mini);
+#define BUI_BITMAP_LOGO_LEDGER_MINI ((bui_const_bitmap_t) { .w = bui_bitmap_logo_ledger_mini_w, \
+		.h = bui_bitmap_logo_ledger_mini_h, .bb = bui_bitmap_logo_ledger_mini_bitmap })
 BUI_DECLARE_BITMAP(badge_cross);
-#define BUI_BITMAP_BADGE_CROSS ((bui_const_bitmap_t) { .w = bui_bitmap_badge_cross_w, .h = bui_bitmap_badge_cross_h, .bb = bui_bitmap_badge_cross_bitmap })
+#define BUI_BITMAP_BADGE_CROSS ((bui_const_bitmap_t) { .w = bui_bitmap_badge_cross_w, .h = bui_bitmap_badge_cross_h, \
+		.bb = bui_bitmap_badge_cross_bitmap })
 BUI_DECLARE_BITMAP(badge_dashboard);
-#define BUI_BITMAP_BADGE_DASHBOARD ((bui_const_bitmap_t) { .w = bui_bitmap_badge_dashboard_w, .h = bui_bitmap_badge_dashboard_h, .bb = bui_bitmap_badge_dashboard_bitmap })
+#define BUI_BITMAP_BADGE_DASHBOARD ((bui_const_bitmap_t) { .w = bui_bitmap_badge_dashboard_w, \
+		.h = bui_bitmap_badge_dashboard_h, .bb = bui_bitmap_badge_dashboard_bitmap })
+BUI_DECLARE_BITMAP(badge_validate);
+#define BUI_BITMAP_BADGE_VALIDATE ((bui_const_bitmap_t) { .w = bui_bitmap_badge_validate_w, \
+		.h = bui_bitmap_badge_validate_h, .bb = bui_bitmap_badge_validate_bitmap })
+BUI_DECLARE_BITMAP(badge_loading);
+#define BUI_BITMAP_BADGE_LOADING ((bui_const_bitmap_t) { .w = bui_bitmap_badge_loading_w, \
+		.h = bui_bitmap_badge_loading_h, .bb = bui_bitmap_badge_loading_bitmap })
+BUI_DECLARE_BITMAP(badge_warning);
+#define BUI_BITMAP_BADGE_WARNING ((bui_const_bitmap_t) { .w = bui_bitmap_badge_warning_w, \
+		.h = bui_bitmap_badge_warning_h, .bb = bui_bitmap_badge_warning_bitmap })
+BUI_DECLARE_BITMAP(badge_install);
+#define BUI_BITMAP_BADGE_INSTALL ((bui_const_bitmap_t) { .w = bui_bitmap_badge_install_w, \
+		.h = bui_bitmap_badge_install_h, .bb = bui_bitmap_badge_install_bitmap })
+BUI_DECLARE_BITMAP(badge_transaction);
+#define BUI_BITMAP_BADGE_TRANSACTION ((bui_const_bitmap_t) { .w = bui_bitmap_badge_transaction_w, \
+		.h = bui_bitmap_badge_transaction_h, .bb = bui_bitmap_badge_transaction_bitmap })
+BUI_DECLARE_BITMAP(badge_bitcoin);
+#define BUI_BITMAP_BADGE_BITCOIN ((bui_const_bitmap_t) { .w = bui_bitmap_badge_bitcoin_w, \
+		.h = bui_bitmap_badge_bitcoin_h, .bb = bui_bitmap_badge_bitcoin_bitmap })
+BUI_DECLARE_BITMAP(badge_ethereum);
+#define BUI_BITMAP_BADGE_ETHEREUM ((bui_const_bitmap_t) { .w = bui_bitmap_badge_ethereum_w, \
+		.h = bui_bitmap_badge_ethereum_h, .bb = bui_bitmap_badge_ethereum_bitmap })
+BUI_DECLARE_BITMAP(badge_eye);
+#define BUI_BITMAP_BADGE_EYE ((bui_const_bitmap_t) { .w = bui_bitmap_badge_eye_w, .h = bui_bitmap_badge_eye_h, \
+		.bb = bui_bitmap_badge_eye_bitmap })
+BUI_DECLARE_BITMAP(badge_people);
+#define BUI_BITMAP_BADGE_PEOPLE ((bui_const_bitmap_t) { .w = bui_bitmap_badge_people_w, \
+		.h = bui_bitmap_badge_people_h, .bb = bui_bitmap_badge_people_bitmap })
+BUI_DECLARE_BITMAP(badge_lock);
+#define BUI_BITMAP_BADGE_LOCK ((bui_const_bitmap_t) { .w = bui_bitmap_badge_lock_w, .h = bui_bitmap_badge_lock_h, \
+		.bb = bui_bitmap_badge_lock_bitmap })
+BUI_DECLARE_BITMAP(toggle_on);
+#define BUI_BITMAP_TOGGLE_ON ((bui_const_bitmap_t) { .w = bui_bitmap_toggle_on_w, .h = bui_bitmap_toggle_on_h, \
+		.bb = bui_bitmap_toggle_on_bitmap })
+BUI_DECLARE_BITMAP(toggle_off);
+#define BUI_BITMAP_TOGGLE_OFF ((bui_const_bitmap_t) { .w = bui_bitmap_toggle_off_w, .h = bui_bitmap_toggle_off_h, \
+		.bb = bui_bitmap_toggle_off_bitmap })
+BUI_DECLARE_BITMAP(app_settings);
+#define BUI_BITMAP_APP_SETTINGS ((bui_const_bitmap_t) { .w = bui_bitmap_app_settings_w, \
+		.h = bui_bitmap_app_settings_h, .bb = bui_bitmap_app_settings_bitmap })
+
+#undef BUI_DECLARE_BITMAP
 
 /*
  * Send some data contained within the provided display buffer to the MCU to be displayed.

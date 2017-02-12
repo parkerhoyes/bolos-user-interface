@@ -287,8 +287,8 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 	}
 
 	// Draw center arrow icons
-	bui_draw_bitmap(buffer, BUI_BITMAP_LEFT, 0, 0, 58, 5, BUI_BITMAP_LEFT.w, BUI_BITMAP_LEFT.h);
-	bui_draw_bitmap(buffer, BUI_BITMAP_RIGHT, 0, 0, 66, 5, BUI_BITMAP_RIGHT.w, BUI_BITMAP_RIGHT.h);
+	bui_draw_bitmap(buffer, BUI_BITMAP_ICON_LEFT, 0, 0, 58, 5, BUI_BITMAP_ICON_LEFT.w, BUI_BITMAP_ICON_LEFT.h);
+	bui_draw_bitmap(buffer, BUI_BITMAP_ICON_RIGHT, 0, 0, 66, 5, BUI_BITMAP_ICON_RIGHT.w, BUI_BITMAP_ICON_RIGHT.h);
 
 	// Draw keyboard "keys"
 	if (bkb->type_buff_size != bkb->type_buff_cap) { // If the textbox is not full
@@ -377,8 +377,8 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 			}
 			if (righti + i == layout_size) {
 				// Draw backspace key
-				bui_draw_bitmap(buffer, BUI_BITMAP_LEFT_FILLED, 0, 0, x + 1, y, BUI_BITMAP_LEFT_FILLED.w,
-						BUI_BITMAP_LEFT_FILLED.h);
+				bui_draw_bitmap(buffer, BUI_BITMAP_ICON_LEFT_FILLED, 0, 0, x + 1, y, BUI_BITMAP_ICON_LEFT_FILLED.w,
+						BUI_BITMAP_ICON_LEFT_FILLED.h);
 			} else {
 				// Draw normal key
 				bui_bkb_draw_key(buffer, layout[righti + i], x, y);
@@ -386,7 +386,8 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 		}
 	} else {
 		// Draw backspace key
-		bui_draw_bitmap(buffer, BUI_BITMAP_LEFT_FILLED, 0, 0, 1, 0, BUI_BITMAP_LEFT_FILLED.w, BUI_BITMAP_LEFT_FILLED.h);
+		bui_draw_bitmap(buffer, BUI_BITMAP_ICON_LEFT_FILLED, 0, 0, 1, 0, BUI_BITMAP_ICON_LEFT_FILLED.w,
+				BUI_BITMAP_ICON_LEFT_FILLED.h);
 	}
 }
 
