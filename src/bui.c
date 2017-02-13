@@ -45,7 +45,7 @@
  *     a 32 bit integer containing the sequence of bits starting at bit number n * w + o in the bitmap,
  *     truncated to w or 32 bits, whichever is lesser; the bit sequence begins at the most significant bit in the int
  */
-static uint32_t bui_get_bitmap_row_32(const unsigned char *bitmap, uint32_t w, uint32_t n, uint32_t o) {
+static uint32_t bui_get_bitmap_row_32(const uint8_t *bitmap, uint32_t w, uint32_t n, uint32_t o) {
 	uint64_t row = 0;
 	uint32_t fi = n * w + o; // The index of the first bit to retrieve within the entire bitmap
 	w -= o;
@@ -113,8 +113,8 @@ static void bui_rshift_128(uint32_t *arr, uint8_t shift) {
 
 int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress) {
 	unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
-	unsigned char section[64];
-	for (int i = 0; i < 64; i++)
+	uint8_t section[64];
+	for (uint8_t i = 0; i < 64; i++)
 		section[i] = buffer->bitmap[511 - progress * 64 - i];
 	io_seproxyhal_display_bitmap(0, progress * 4, 128, 4, color_index, 1, section);
 	if (progress != 7)
@@ -199,7 +199,7 @@ void bui_set_pixel(bui_bitmap_128x32_t *buffer, int x, int y, bool color) {
 		buffer->bitmap[dest_byte] &= ~(0x80 >> dest_bit);
 }
 
-void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, int bitmap_w, int src_x, int src_y,
+void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const uint8_t *bitmap, int bitmap_w, int src_x, int src_y,
 		int dest_x, int dest_y, int w, int h) {
 	if (dest_x >= 128 || dest_y >= 32 || w == 0 || h == 0 || dest_x + w <= 0 || dest_y + h <= 0)
 		return;

@@ -37,19 +37,14 @@ The font module (which defines all symbols with the prefix `bui_font_`)
 implements basic font rendering. The function `bui_font_draw_string(...)` allows
 an application to draw a string onto a preallocated display buffer (of type
 `bui_bitmap_128x32_t`). The library includes 14 different fonts ranging from 8
-to 32 pixels in height. By default, bitmaps for all fonts are included. It is
-highly recommended that applications declare defines when compiling BUI to
-select only the necessary fonts to include for their application. To specify
-that you wish to select fonts to include rather than include all of them, define
-`BUI_FONT_CHOOSE`. Then, defines of the form `BUI_FONT_INCLUDE_<font name>`
-specify the fonts that are to be included.
+to 32 pixels in height.
 
 ### Binary Keyboard Module
 
 The binary keyboard module (which defines all symbols with the prefix
 `bui_bkb_`) implements a "keyboard" that allows users to type letters, digits,
 symbols, and punctuation on the Nano S using only the two buttons on the device.
-Note that this module requires the Lucida Console 8 font from the font module. I
+Note that this module uses the Lucida Console 8 font from the font module. I
 have created a [demo of the binary
 keyboard](https://github.com/parkerhoyes/nanos-app-binarykbdemo) which is a good
 starting point to learn how to use it in your project. The binary keyboard is

@@ -30,7 +30,7 @@
  * https://github.com/LedgerHQ/nanos-nonsecure-firmware/tree/master/bagl/src
  */
 
-static const unsigned char bui_font_open_sans_semibold_18_bitmaps[] = {
+static const uint8_t bui_font_open_sans_semibold_18_bitmaps[] = {
 	// character code 0x20
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00,
@@ -525,7 +525,7 @@ static const bui_font_char_t bui_font_open_sans_semibold_18_characters[] = {
 	{10, 2047}, // character code 0x7F
 };
 
-static const bui_font_t bui_font_open_sans_semibold_18 = {
+static const bui_font_t bui_font_data_open_sans_semibold_18 = {
 	.data = {
 		18, 13, 0, 0x20, 0x7F,
 		bui_font_open_sans_semibold_18_characters,

@@ -52,7 +52,7 @@ typedef uint8_t (*bui_menu_elem_size_callback_t)(const bui_menu_menu_t *menu, ui
  *     y: the y-coordinate of the top of the destination in the buffer onto which the element is to be drawn
  */
 typedef void (*bui_menu_elem_draw_callback_t)(const bui_menu_menu_t *menu, uint8_t i, bui_bitmap_128x32_t *buffer,
-		int y);
+		int16_t y);
 
 // NOTE: The definition of all fields in this struct except for the callbacks are considered internal. All other fields
 // may be changed between versions without warning, and all fields other than the callback fields should never be

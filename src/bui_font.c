@@ -43,7 +43,7 @@ typedef struct {
 	uint8_t first_char; // Character code of the first character in the font bitmap
 	uint8_t last_char; // Character code of the last character in the font bitmap
 	const bui_font_char_t *chars;
-	const unsigned char *bitmaps; // Array of bitmaps for all characters
+	const uint8_t *bitmaps; // Array of bitmaps for all characters
 } bui_font_data_t;
 
 typedef union {
@@ -53,16 +53,16 @@ typedef union {
 
 #include "bui_font_fonts.inc"
 
-const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id) {
-	if ((int) font_id <= BUI_FONT_NONE || (int) font_id >= BUI_FONT_LAST)
-		return NULL;
-	return &((const bui_font_t*) PIC(bui_fonts[(int) font_id]))->info;
+const bui_font_id_t bui_font_null = NULL;
+
+#define bui_font_for_id(id) ((const bui_font_t*) PIC(id))
+
+const bui_font_info_t* bui_font_get_font_info(bui_font_id_t font_id) {
+	return &bui_font_for_id(font_id)->info;
 }
 
-uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch) {
-	if ((int) font_id <= BUI_FONT_NONE || (int) font_id >= BUI_FONT_LAST)
-		return 0;
-	const bui_font_data_t *font_data = &((const bui_font_t*) PIC(bui_fonts[(int) font_id]))->data;
+uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch) {
+	const bui_font_data_t *font_data = &bui_font_for_id(font_id)->data;
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
@@ -70,13 +70,8 @@ uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch) {
 	return ((const bui_font_char_t*) PIC(font_data->chars))[chari].char_width;
 }
 
-const unsigned char* bui_font_get_char_bitmap(bui_font_id_e font_id, char ch, int *w_dest) {
-	if ((int) font_id <= BUI_FONT_NONE || (int) font_id >= BUI_FONT_LAST) {
-		if (w_dest != NULL)
-			*w_dest = 0;
-		return NULL;
-	}
-	const bui_font_data_t *font_data = &((const bui_font_t*) PIC(bui_fonts[(int) font_id]))->data;
+const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest) {
+	const bui_font_data_t *font_data = &bui_font_for_id(font_id)->data;
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
@@ -84,17 +79,17 @@ const unsigned char* bui_font_get_char_bitmap(bui_font_id_e font_id, char ch, in
 	bui_font_char_t font_char = ((const bui_font_char_t*) PIC(font_data->chars))[chari];
 	if (w_dest != NULL)
 		*w_dest = font_char.char_width;
-	return (const unsigned char*) PIC(font_data->bitmaps) + font_char.bitmap_offset;
+	return (const uint8_t*) PIC(font_data->bitmaps) + font_char.bitmap_offset;
 }
 
-void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_dir_e alignment,
-		bui_font_id_e font_id) {
+void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t y, bui_dir_e alignment,
+		bui_font_id_t font_id) {
 	if (x >= 128 || y >= 32)
 		return;
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	int h = font_info->char_height;
-	int w;
-	const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
+	int16_t h = font_info->char_height;
+	int16_t w;
+	const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
 	if (bui_dir_is_htl_center(alignment)) {
 		x -= w / 2;
 		if (w % 2 == 1)
@@ -112,8 +107,8 @@ void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_
 	bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, h);
 }
 
-void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int x, int y, bui_dir_e alignment,
-		bui_font_id_e font_id) {
+void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
+		bui_font_id_t font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
 	if (bui_dir_is_vtl_center(alignment)) {
 		y -= font_info->baseline_height / 2;
@@ -125,7 +120,7 @@ void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int x, i
 	if (y >= 32 || y + font_info->char_height <= 0)
 		return;
 	if (!bui_dir_is_left(alignment)) {
-		int w = 0;
+		int16_t w = 0;
 		for (const char *s = str; *s != '\0'; s++) {
 			w += bui_font_get_char_width(font_id, *s);
 			w += font_info->char_kerning;
@@ -143,8 +138,8 @@ void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int x, i
 	if (x >= 128)
 		return;
 	for (; *str != '\0' && x < 128; str++) {
-		int w;
-		const unsigned char *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
+		int16_t w;
+		const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
 		bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, font_info->char_height);
 		x += w;
 		x += font_info->char_kerning;

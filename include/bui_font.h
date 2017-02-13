@@ -28,24 +28,26 @@
 
 #include "bui.h"
 
-typedef enum {
-	BUI_FONT_NONE = -1, // Not a real font
-	BUI_FONT_COMIC_SANS_MS_20,
-	BUI_FONT_LUCIDA_CONSOLE_8,
-	BUI_FONT_LUCIDA_CONSOLE_15,
-	BUI_FONT_OPEN_SANS_BOLD_13,
-	BUI_FONT_OPEN_SANS_BOLD_21,
-	BUI_FONT_OPEN_SANS_EXTRABOLD_11,
-	BUI_FONT_OPEN_SANS_LIGHT_13,
-	BUI_FONT_OPEN_SANS_LIGHT_14,
-	BUI_FONT_OPEN_SANS_LIGHT_16,
-	BUI_FONT_OPEN_SANS_LIGHT_20,
-	BUI_FONT_OPEN_SANS_LIGHT_21,
-	BUI_FONT_OPEN_SANS_LIGHT_32,
-	BUI_FONT_OPEN_SANS_REGULAR_11,
-	BUI_FONT_OPEN_SANS_SEMIBOLD_18,
-	BUI_FONT_LAST // Not a real font
-} bui_font_id_e;
+// NOTE: The definition of this type is considered internal. It may be changed between versions without warning.
+typedef const void* bui_font_id_t;
+
+// This is not a valid font; it may be used as a unique identifier, and is guaranteed to be equal to the
+// zero-initialized value of bui_font_id_t.
+extern const bui_font_id_t bui_font_null;
+extern const bui_font_id_t bui_font_comic_sans_ms_20;
+extern const bui_font_id_t bui_font_lucida_console_8;
+extern const bui_font_id_t bui_font_lucida_console_15;
+extern const bui_font_id_t bui_font_open_sans_bold_13;
+extern const bui_font_id_t bui_font_open_sans_bold_21;
+extern const bui_font_id_t bui_font_open_sans_extrabold_11;
+extern const bui_font_id_t bui_font_open_sans_light_13;
+extern const bui_font_id_t bui_font_open_sans_light_14;
+extern const bui_font_id_t bui_font_open_sans_light_16;
+extern const bui_font_id_t bui_font_open_sans_light_20;
+extern const bui_font_id_t bui_font_open_sans_light_21;
+extern const bui_font_id_t bui_font_open_sans_light_32;
+extern const bui_font_id_t bui_font_open_sans_regular_11;
+extern const bui_font_id_t bui_font_open_sans_semibold_18;
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
 typedef struct {
@@ -62,9 +64,9 @@ typedef struct {
  * Args:
  *     font_id: the ID of the font
  * Returns:
- *     a pointer to a structure containing info about the specified font, or NULL if font_id is invalid
+ *     a pointer to a structure containing info about the specified font
  */
-const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id);
+const bui_font_info_t* bui_font_get_font_info(bui_font_id_t font_id);
 
 /*
  * Get the width of a given character in the specified font.
@@ -73,9 +75,9 @@ const bui_font_info_t* bui_font_get_font_info(bui_font_id_e font_id);
  *     font_id: the ID of the font
  *     ch: the character code
  * Returns:
- *     the width of the given character, in pixels; if font_id is invalid, 0 is returned
+ *     the width of the given character, in pixels
  */
-uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch);
+uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch);
 
 /*
  * Get the pointer to the bitmap for a character in a particular font.
@@ -83,12 +85,12 @@ uint8_t bui_font_get_char_width(bui_font_id_e font_id, char ch);
  * Args:
  *     font_id: the ID of the font
  *     ch: the character code
- *     w_dest: a pointer to an int in which the width of the character will be stored; if font_id is invalid, this is
- *             set to 0; if this is NULL, it is not accessed
+ *     w_dest: a pointer to an int in which the width of the character will be stored; if this is NULL, it is not
+ *             accessed
  * Returns:
- *     the pointer to the bitmap for the specified character in the specified font or NULL if font_id is invalid
+ *     the pointer to the bitmap for the specified character in the specified font
  */
-const unsigned char* bui_font_get_char_bitmap(bui_font_id_e font_id, char ch, int *w_dest);
+const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest);
 
 /*
 * Draw a character in the specified font onto the bottom display buffer. Any part of the character out of bounds of the
@@ -106,7 +108,8 @@ const unsigned char* bui_font_get_char_bitmap(bui_font_id_e font_id, char ch, in
 *     alignment: the position of the anchor within the text boundaries
 *     font_id: the ID of the font to be used to render the character
 */
-void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_dir_e alignment, bui_font_id_e font_id);
+void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t y, bui_dir_e alignment,
+		bui_font_id_t font_id);
 
 /*
 * Draw a string in the specified font onto the bottom display buffer. Any part of the string out of bounds of the
@@ -124,7 +127,7 @@ void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int x, int y, bui_
 *     alignment: the position of the anchor within the text boundaries
 *     font_id: the ID of the font to be used to render the string
 */
-void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int x, int y, bui_dir_e alignment,
-		bui_font_id_e font_id);
+void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
+		bui_font_id_t font_id);
 
 #endif

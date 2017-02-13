@@ -37,19 +37,19 @@
 #define KEYS_ANIMATION_LEN 36 // The duration of the keys animation, in 10 ms increments
 #define CURSOR_ANIMATION_INT 100 // Half the period of the cursor blink animation, in 10 ms increments
 
-static const unsigned char bitmap_ellipsis_bitmap[] = {
+static const uint8_t bitmap_ellipsis_bitmap[] = {
 	0x00, 0x2A, 0x00, 0x00, 0x00,
 };
 static const uint8_t bitmap_ellipsis_w = 5;
 static const uint8_t bitmap_ellipsis_h = 8;
 
-static const unsigned char bitmap_space_bitmap[] = {
+static const uint8_t bitmap_space_bitmap[] = {
 	0x00, 0x3F, 0x10, 0x00, 0x00,
 };
 static const uint8_t bitmap_space_w = 5;
 static const uint8_t bitmap_space_h = 8;
 
-static const unsigned char bitmap_toggle_case_bitmap[] = {
+static const uint8_t bitmap_toggle_case_bitmap[] = {
 	0x03, 0xA2, 0x38, 0xE2, 0x2E,
 };
 static const uint8_t bitmap_toggle_case_w = 5;
@@ -101,12 +101,12 @@ static void bui_bkb_toggle_case(char *str, uint8_t n) {
  *
  * Args:
  *     buffer: the display buffer
- *     key: the key to be drawn; may be a character displayable in BUI_FONT_LUCIDA_CONSOLE_8, or an option key; the only
+ *     key: the key to be drawn; may be a character displayable in bui_font_lucida_console_8, or an option key; the only
  *          whitespace character allowed is a space
  *     x: the x-coordinate of the top-left corner of the destination
  *     y: the y-coordinate of the top-left corner of the destination
  */
-static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int x, int y) {
+static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int16_t x, int16_t y) {
 	switch (key) {
 	case BUI_BKB_OPTION_NUMERICS:
 		key = '#';
@@ -122,7 +122,7 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int x, int y
 		bui_draw_bitmap(buffer, bitmap_space_bitmap, bitmap_space_w, 0, 0, x, y, bitmap_space_w, bitmap_space_h);
 		return;
 	}
-	bui_font_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, BUI_FONT_LUCIDA_CONSOLE_8);
+	bui_font_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, bui_font_lucida_console_8);
 }
 
 void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, char *type_buff, uint8_t type_buff_size,
@@ -279,7 +279,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 					bitmap_ellipsis_h);
 		} else if (i < textbox_cursor_i) {
 			bui_font_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
-					BUI_FONT_LUCIDA_CONSOLE_8);
+					bui_font_lucida_console_8);
 		} else { // i == textbox_cursor_i
 			if (bkb->keys_tick == 255 || bkb->cursor_tick < 10)
 				bui_fill_rect(buffer, textbox_x + textbox_cursor_i * 6 + 2, 22, 1, 7, true); // Draw cursor

@@ -30,7 +30,7 @@
  * https://github.com/LedgerHQ/nanos-nonsecure-firmware/tree/master/bagl/src
  */
 
-static const unsigned char bui_font_comic_sans_ms_20_bitmaps[] = {
+static const uint8_t bui_font_comic_sans_ms_20_bitmaps[] = {
 	// character code 0x20
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -604,7 +604,7 @@ static const bui_font_char_t bui_font_comic_sans_ms_20_characters[] = {
 	{9, 2713}, // character code 0x7F
 };
 
-static const bui_font_t bui_font_comic_sans_ms_20 = {
+static const bui_font_t bui_font_data_comic_sans_ms_20 = {
 	.data = {
 		21, 15, 0, 0x20, 0x7F,
 		bui_font_comic_sans_ms_20_characters,

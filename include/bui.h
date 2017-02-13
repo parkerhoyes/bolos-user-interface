@@ -27,6 +27,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+_Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
+
 #define BUI_VER_MAJOR 0
 #define BUI_VER_MINOR 5
 #define BUI_VER_PATCH 0
@@ -40,7 +42,7 @@
 typedef struct bui_bitmap_128x32_t {
 	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
 	// right to left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
-	unsigned char bitmap[512];
+	uint8_t bitmap[512];
 } bui_bitmap_128x32_t;
 
 typedef enum {
@@ -98,9 +100,9 @@ static inline bool bui_dir_is_vtl_center(bui_dir_e dir) {
 }
 
 #define BUI_DECLARE_BITMAP(name) \
-		extern const unsigned char bui_bitmap_ ## name ## _w; \
-		extern const unsigned char bui_bitmap_ ## name ## _h; \
-		extern const unsigned char bui_bitmap_ ## name ## _bitmap[];
+		extern const uint8_t bui_bitmap_ ## name ## _w; \
+		extern const uint8_t bui_bitmap_ ## name ## _h; \
+		extern const uint8_t bui_bitmap_ ## name ## _bitmap[];
 
 BUI_DECLARE_BITMAP(check);
 BUI_DECLARE_BITMAP(cross);
@@ -194,7 +196,7 @@ void bui_set_pixel(bui_bitmap_128x32_t *buffer, int x, int y, bool color);
  *     w: the width of the source and destination rectangles; must be >= 0 and <= 32,767
  *     h: the height of the source and destination rectangles; must be >= 0 and <= 32,767
  */
-void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, int bitmap_w, int src_x, int src_y,
+void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const uint8_t *bitmap, int bitmap_w, int src_x, int src_y,
 		int dest_x, int dest_y, int w, int h);
 
 #endif
