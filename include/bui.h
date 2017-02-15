@@ -33,17 +33,36 @@ _Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
 #define BUI_VER_MINOR 5
 #define BUI_VER_PATCH 0
 
-/*
- * Bitmaps in this library are represented as sequences of bits, each representing the color of a single pixel (a 1 bit
- * represents the foreground color, and a 0 bit represents the background color). Bitmaps are stored big-endian (first
- * bytes in the sequence appear in lower memory addresses), rows preferred, from bottom to top and from right to left.
- */
-
-typedef struct bui_bitmap_128x32_t {
-	// A 128x32 bitmap. Every 128 bits is a row ordered from bottom to top, each row containing 128 pixels ordered from
-	// right to left on the screen. The foreground color is represented by 1 bits, and the background color by 0 bits.
-	uint8_t bitmap[512];
+typedef struct {
+	// A 2-dimensional bit array (or "bit block") representing the contents of the bitmap. The array is encoded as a
+	// sequence of bits, starting at the most significant bit, which is 128 * 32 bits in length, with big-endian byte
+	// order. Every 128 bits in the sequence is a row, with 32 rows in total. The values of cells in this array (a bit
+	// at a specific row and column) correspond to the colors of the pixels at their respective location, except the
+	// order of rows and columns are both reversed.
+	uint8_t bb[512];
 } bui_bitmap_128x32_t;
+
+typedef struct {
+	int16_t w;
+	int16_t h;
+	// A 2-dimensional bit array (or "bit block") representing the contents of the bitmap. The array is encoded as a
+	// sequence of bits, starting at the most significant bit, which is w * h bits in length, with big-endian byte
+	// order. Every w bits in the sequence is a row, with h rows in total. The values of cells in this array (a bit at a
+	// specific row and column) correspond to the colors of the pixels at their respective location, except the order of
+	// rows and columns are both reversed.
+	uint8_t *bb;
+} bui_bitmap_t;
+
+typedef struct {
+	int16_t w;
+	int16_t h;
+	// A 2-dimensional bit array (or "bit block") representing the contents of the bitmap. The array is encoded as a
+	// sequence of bits, starting at the most significant bit, which is w * h bits in length, with big-endian byte
+	// order. Every w bits in the sequence is a row, with h rows in total. The values of cells in this array (a bit at a
+	// specific row and column) correspond to the colors of the pixels at their respective location, except the order of
+	// rows and columns are both reversed.
+	const uint8_t *bb;
+} bui_const_bitmap_t;
 
 typedef enum {
 	BUI_DIR_LEFT         = 0b00000001,
@@ -105,24 +124,38 @@ static inline bool bui_dir_is_vtl_center(bui_dir_e dir) {
 		extern const uint8_t bui_bitmap_ ## name ## _bitmap[];
 
 BUI_DECLARE_BITMAP(check);
+#define BUI_BITMAP_CHECK ((bui_const_bitmap_t) { .w = bui_bitmap_check_w, .h = bui_bitmap_check_h, .bb = bui_bitmap_check_bitmap })
 BUI_DECLARE_BITMAP(cross);
+#define BUI_BITMAP_CROSS ((bui_const_bitmap_t) { .w = bui_bitmap_cross_w, .h = bui_bitmap_cross_h, .bb = bui_bitmap_cross_bitmap })
 BUI_DECLARE_BITMAP(left);
+#define BUI_BITMAP_LEFT ((bui_const_bitmap_t) { .w = bui_bitmap_left_w, .h = bui_bitmap_left_h, .bb = bui_bitmap_left_bitmap })
 BUI_DECLARE_BITMAP(right);
+#define BUI_BITMAP_RIGHT ((bui_const_bitmap_t) { .w = bui_bitmap_right_w, .h = bui_bitmap_right_h, .bb = bui_bitmap_right_bitmap })
 BUI_DECLARE_BITMAP(up);
+#define BUI_BITMAP_UP ((bui_const_bitmap_t) { .w = bui_bitmap_up_w, .h = bui_bitmap_up_h, .bb = bui_bitmap_up_bitmap })
 BUI_DECLARE_BITMAP(down);
+#define BUI_BITMAP_DOWN ((bui_const_bitmap_t) { .w = bui_bitmap_down_w, .h = bui_bitmap_down_h, .bb = bui_bitmap_down_bitmap })
 BUI_DECLARE_BITMAP(left_filled);
+#define BUI_BITMAP_LEFT_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_left_filled_w, .h = bui_bitmap_left_filled_h, .bb = bui_bitmap_left_filled_bitmap })
 BUI_DECLARE_BITMAP(right_filled);
+#define BUI_BITMAP_RIGHT_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_right_filled_w, .h = bui_bitmap_right_filled_h, .bb = bui_bitmap_right_filled_bitmap })
 BUI_DECLARE_BITMAP(up_filled);
+#define BUI_BITMAP_UP_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_up_filled_w, .h = bui_bitmap_up_filled_h, .bb = bui_bitmap_up_filled_bitmap })
 BUI_DECLARE_BITMAP(down_filled);
+#define BUI_BITMAP_DOWN_FILLED ((bui_const_bitmap_t) { .w = bui_bitmap_down_filled_w, .h = bui_bitmap_down_filled_h, .bb = bui_bitmap_down_filled_bitmap })
 BUI_DECLARE_BITMAP(ledger_mini);
+#define BUI_BITMAP_LEDGER_MINI ((bui_const_bitmap_t) { .w = bui_bitmap_ledger_mini_w, .h = bui_bitmap_ledger_mini_h, .bb = bui_bitmap_ledger_mini_bitmap })
 BUI_DECLARE_BITMAP(badge_cross);
+#define BUI_BITMAP_BADGE_CROSS ((bui_const_bitmap_t) { .w = bui_bitmap_badge_cross_w, .h = bui_bitmap_badge_cross_h, .bb = bui_bitmap_badge_cross_bitmap })
 BUI_DECLARE_BITMAP(badge_dashboard);
+#define BUI_BITMAP_BADGE_DASHBOARD ((bui_const_bitmap_t) { .w = bui_bitmap_badge_dashboard_w, .h = bui_bitmap_badge_dashboard_h, .bb = bui_bitmap_badge_dashboard_bitmap })
 
 /*
  * Send some data contained within the provided display buffer to the MCU to be displayed.
  *
  * Args:
- *     buffer: the display buffer to be displayed
+ *     buffer: the display buffer to be displayed; pixels with a color index of 1 are displayed as the foreground color,
+ *             and pixels with a color index of 0 are displayed as the background color
  *     progress: the progress made displaying this buffer; this should be 0 to start displaying the buffer anew, or a
  *               value previously returned by bui_display(...), but not -1
  * Returns:
@@ -135,8 +168,7 @@ int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress);
  *
  * Args:
  *     buffer: the display buffer to be filled
- *     color: the color with which to fill the display buffer; true is the foreground color and false is the background
- *            color
+ *     color: the color with which to fill the display buffer; true fills with 1 bits and false fills with 0 bits
  */
 void bui_fill(bui_bitmap_128x32_t *buffer, bool color);
 
@@ -154,13 +186,13 @@ void bui_invert(bui_bitmap_128x32_t *buffer);
  *
  * Args:
  *     buffer: the display buffer onto which to draw the rectangle
- *     x: the x-coordinate of top-left corner of the destination rectangle; must be >= -32,768 and <= 32,767
- *     y: the y-coordinate of top-left corner of the destination rectangle; must be >= -32,768 and <= 32,767
- *     w: the width of the rectangle; must be >= 0 and <= 32,767
- *     h: the height of the rectangle; must be >= 0 and <= 32,767
- *     color: the color with which to fill the rectangle; true is the foreground color and false is the background color
+ *     x: the x-coordinate of top-left corner of the destination rectangle
+ *     y: the y-coordinate of top-left corner of the destination rectangle
+ *     w: the width of the rectangle; must be >= 0
+ *     h: the height of the rectangle; must be >= 0
+ *     color: the color with which to fill the rectangle; true fills with 1 bits and false fills with 0 bits
  */
-void bui_fill_rect(bui_bitmap_128x32_t *buffer, int x, int y, int w, int h, bool color);
+void bui_fill_rect(bui_bitmap_128x32_t *buffer, int16_t x, int16_t y, int16_t w, int16_t h, bool color);
 
 /*
  * Set the color of a single pixel on the provided display buffer. If the coordinates of the pixel are out of bounds of
@@ -170,33 +202,30 @@ void bui_fill_rect(bui_bitmap_128x32_t *buffer, int x, int y, int w, int h, bool
  *     buffer: the display buffer whose pixel is to be set
  *     x: the x-coordinate of the pixel to be set
  *     y: the y-coordinate of the pixel to be set
- *     color: the color to which the pixel is to be set; true is the foreground color and false is the background color
+ *     color: the color to which the pixel is to be set; true fills with 1 bits and false fills with 0 bits
  */
-void bui_set_pixel(bui_bitmap_128x32_t *buffer, int x, int y, bool color);
+void bui_set_pixel(bui_bitmap_128x32_t *buffer, int16_t x, int16_t y, bool color);
 
 /*
  * Draw a bitmap onto the provided display buffer given a source rectangle on the bitmap's coordinate plane and a
  * destination rectangle on the buffer's coordinate plane. Any part of the destination rectangle out of bounds of the
  * buffer will not be drawn. The source rectangle must be entirely within the source bitmap. If the width or height is
- * 0, this function has no side effects.
+ * 0, this function does not modify the bitmap. Pixels with a color index of 0 in the source bitmap are interpreted as
+ * transparent, and pixels with a color index of 1 are written to the destination buffer.
  *
  * Args:
  *     buffer: the display buffer onto which to draw the bitmap
- *     bitmap: the pointer to the bitmap to be drawn; for each pixel, true is the foreground color and false is the
- *             background color
- *     bitmap_w: the number of pixels in a single row in the bitmap; must be >= 0 and <= 32,767
- *     src_x: the x-coordinate of the top-left corner of the source rectangle within the source bitmap's coordinate
- *            plane; must be >= 0 and <= 32,767
- *     src_y: the y-coordinate of the top-left corner of the source rectangle within the source bitmap's coordinate
- *            plane; must be >= 0 and <= 32,767
- *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of the buffer's
- *             coordinate plane; must be >= -32,768 and <= 32,767
- *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of the buffer's
- *             coordinate plane; must be >= -32,768 and <= 32,767
- *     w: the width of the source and destination rectangles; must be >= 0 and <= 32,767
- *     h: the height of the source and destination rectangles; must be >= 0 and <= 32,767
+ *     bitmap: the bitmap to be drawn onto buffer
+ *     src_x: the x-coordinate of the top-left corner of the source rectangle on or outside of bitmap's coordinate plane
+ *     src_y: the y-coordinate of the top-left corner of the source rectangle on or outside of bitmap's coordinate plane
+ *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of buffer's coordinate
+ *             plane
+ *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of buffer's coordinate
+ *             plane
+ *     w: the width of the source and destination rectangles; must be >= 0
+ *     h: the height of the source and destination rectangles; must be >= 0
  */
-void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const uint8_t *bitmap, int bitmap_w, int src_x, int src_y,
-		int dest_x, int dest_y, int w, int h);
+void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, bui_const_bitmap_t bitmap, int16_t src_x, int16_t src_y,
+		int16_t dest_x, int16_t dest_y, int16_t w, int16_t h);
 
 #endif

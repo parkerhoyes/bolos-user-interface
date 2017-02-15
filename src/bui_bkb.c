@@ -37,23 +37,23 @@
 #define KEYS_ANIMATION_LEN 36 // The duration of the keys animation, in 10 ms increments
 #define CURSOR_ANIMATION_INT 100 // Half the period of the cursor blink animation, in 10 ms increments
 
-static const uint8_t bitmap_ellipsis_bitmap[] = {
+static const uint8_t bui_bkb_bitmap_ellipsis_bitmap[] = {
 	0x00, 0x2A, 0x00, 0x00, 0x00,
 };
-static const uint8_t bitmap_ellipsis_w = 5;
-static const uint8_t bitmap_ellipsis_h = 8;
 
-static const uint8_t bitmap_space_bitmap[] = {
+#define BUI_BKB_BITMAP_ELLIPSIS ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_ellipsis_bitmap })
+
+static const uint8_t bui_bkb_bitmap_space_bitmap[] = {
 	0x00, 0x3F, 0x10, 0x00, 0x00,
 };
-static const uint8_t bitmap_space_w = 5;
-static const uint8_t bitmap_space_h = 8;
 
-static const uint8_t bitmap_toggle_case_bitmap[] = {
+#define BUI_BKB_BITMAP_SPACE ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_space_bitmap })
+
+static const uint8_t bui_bkb_bitmap_toggle_case_bitmap[] = {
 	0x03, 0xA2, 0x38, 0xE2, 0x2E,
 };
-static const uint8_t bitmap_toggle_case_w = 5;
-static const uint8_t bitmap_toggle_case_h = 8;
+
+#define BUI_BKB_BITMAP_TOGGLE_CASE ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_toggle_case_bitmap })
 
 const char bui_bkb_layout_alphabetic[26] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
@@ -115,11 +115,11 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int16_t x, i
 		key = '@';
 		break;
 	case BUI_BKB_OPTION_TOGGLE_CASE:
-		bui_draw_bitmap(buffer, bitmap_toggle_case_bitmap, bitmap_toggle_case_w, 0, 0, x, y, bitmap_toggle_case_w,
-				bitmap_toggle_case_h);
+		bui_draw_bitmap(buffer, BUI_BKB_BITMAP_TOGGLE_CASE, 0, 0, x, y, BUI_BKB_BITMAP_TOGGLE_CASE.w,
+				BUI_BKB_BITMAP_TOGGLE_CASE.h);
 		return;
 	case ' ':
-		bui_draw_bitmap(buffer, bitmap_space_bitmap, bitmap_space_w, 0, 0, x, y, bitmap_space_w, bitmap_space_h);
+		bui_draw_bitmap(buffer, BUI_BKB_BITMAP_SPACE, 0, 0, x, y, BUI_BKB_BITMAP_SPACE.w, BUI_BKB_BITMAP_SPACE.h);
 		return;
 	}
 	bui_font_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, bui_font_lucida_console_8);
@@ -275,8 +275,8 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 	// Draw textbox contents
 	for (uint8_t i = 0; i <= textbox_cursor_i; i++) {
 		if (i == 0 && textbox_ellipsis) {
-			bui_draw_bitmap(buffer, bitmap_ellipsis_bitmap, bitmap_ellipsis_w, 0, 0, textbox_x, 22, bitmap_ellipsis_w,
-					bitmap_ellipsis_h);
+			bui_draw_bitmap(buffer, BUI_BKB_BITMAP_ELLIPSIS, 0, 0, textbox_x, 22, BUI_BKB_BITMAP_ELLIPSIS.w,
+					BUI_BKB_BITMAP_ELLIPSIS.h);
 		} else if (i < textbox_cursor_i) {
 			bui_font_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
 					bui_font_lucida_console_8);
@@ -287,10 +287,8 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 	}
 
 	// Draw center arrow icons
-	bui_draw_bitmap(buffer, bui_bitmap_left_bitmap, bui_bitmap_left_w, 0, 0, 58, 5, bui_bitmap_left_w,
-			bui_bitmap_left_h);
-	bui_draw_bitmap(buffer, bui_bitmap_right_bitmap, bui_bitmap_right_w, 0, 0, 66, 5, bui_bitmap_right_w,
-			bui_bitmap_right_h);
+	bui_draw_bitmap(buffer, BUI_BITMAP_LEFT, 0, 0, 58, 5, BUI_BITMAP_LEFT.w, BUI_BITMAP_LEFT.h);
+	bui_draw_bitmap(buffer, BUI_BITMAP_RIGHT, 0, 0, 66, 5, BUI_BITMAP_RIGHT.w, BUI_BITMAP_RIGHT.h);
 
 	// Draw keyboard "keys"
 	if (bkb->type_buff_size != bkb->type_buff_cap) { // If the textbox is not full
@@ -379,8 +377,8 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 			}
 			if (righti + i == layout_size) {
 				// Draw backspace key
-				bui_draw_bitmap(buffer, bui_bitmap_left_filled_bitmap, bui_bitmap_left_filled_w, 0, 0, x + 1, y,
-						bui_bitmap_left_filled_w, bui_bitmap_left_filled_h);
+				bui_draw_bitmap(buffer, BUI_BITMAP_LEFT_FILLED, 0, 0, x + 1, y, BUI_BITMAP_LEFT_FILLED.w,
+						BUI_BITMAP_LEFT_FILLED.h);
 			} else {
 				// Draw normal key
 				bui_bkb_draw_key(buffer, layout[righti + i], x, y);
@@ -388,8 +386,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 		}
 	} else {
 		// Draw backspace key
-		bui_draw_bitmap(buffer, bui_bitmap_left_filled_bitmap, bui_bitmap_left_filled_w, 0, 0, 1, 0,
-				bui_bitmap_left_filled_w, bui_bitmap_left_filled_h);
+		bui_draw_bitmap(buffer, BUI_BITMAP_LEFT_FILLED, 0, 0, 1, 0, BUI_BITMAP_LEFT_FILLED.w, BUI_BITMAP_LEFT_FILLED.h);
 	}
 }
 

@@ -94,13 +94,10 @@ void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer) {
 	uint8_t focus = menu->focus;
 
 	// Draw arrows
-	if (focus != 0) {
-		bui_draw_bitmap(buffer, bui_bitmap_up_bitmap, bui_bitmap_up_w, 0, 0, 3, 14, bui_bitmap_up_w, bui_bitmap_up_h);
-	}
-	if (focus + 1 != count) {
-		bui_draw_bitmap(buffer, bui_bitmap_down_bitmap, bui_bitmap_down_w, 0, 0, 118, 14, bui_bitmap_down_w,
-				bui_bitmap_down_h);
-	}
+	if (focus != 0)
+		bui_draw_bitmap(buffer, BUI_BITMAP_UP, 0, 0, 3, 14, BUI_BITMAP_UP.w, BUI_BITMAP_UP.h);
+	if (focus + 1 != count)
+		bui_draw_bitmap(buffer, BUI_BITMAP_DOWN, 0, 0, 118, 14, BUI_BITMAP_DOWN.w, BUI_BITMAP_DOWN.h);
 
 	uint8_t focus_size;
 	int32_t focus_pos;

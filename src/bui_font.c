@@ -84,8 +84,6 @@ const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t 
 
 void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t y, bui_dir_e alignment,
 		bui_font_id_t font_id) {
-	if (x >= 128 || y >= 32)
-		return;
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
 	int16_t h = font_info->char_height;
 	int16_t w;
@@ -104,7 +102,7 @@ void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t
 	} else if (bui_dir_is_bottom(alignment)) {
 		y -= h;
 	}
-	bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, h);
+	bui_draw_bitmap(buffer, (bui_const_bitmap_t) { .w = w, .h = h, .bb = bitmap }, 0, 0, x, y, w, h);
 }
 
 void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
@@ -135,12 +133,11 @@ void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t 
 		if (x + w <= 0)
 			return;
 	}
-	if (x >= 128)
-		return;
 	for (; *str != '\0' && x < 128; str++) {
 		int16_t w;
 		const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
-		bui_draw_bitmap(buffer, bitmap, w, 0, 0, x, y, w, font_info->char_height);
+		bui_draw_bitmap(buffer, (bui_const_bitmap_t) { .w = w, .h = font_info->char_height, .bb = bitmap }, 0, 0, x, y,
+				w, font_info->char_height);
 		x += w;
 		x += font_info->char_kerning;
 	}
