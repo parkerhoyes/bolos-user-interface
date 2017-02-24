@@ -34,8 +34,8 @@
 #define CEIL_DIV(x, y) (1 + (((x) - 1) / (y)))
 #define NTH_BIT(n, i) (((n) >> (7 - (i))) & 1) // Only to be used with uint8_t
 
-#define KEYS_ANIMATION_LEN 36 // The duration of the keys animation, in 10 ms increments
-#define CURSOR_ANIMATION_INT 100 // Half the period of the cursor blink animation, in 10 ms increments
+#define KEYS_ANIMATION_LEN 360 // The duration of the keys animation, in milliseconds
+#define CURSOR_ANIMATION_INT 1000 // Half the period of the cursor blink animation, in milliseconds
 
 static const uint8_t bui_bkb_bitmap_ellipsis_bitmap[] = {
 	0x00, 0x2A, 0x00, 0x00, 0x00,
@@ -136,7 +136,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
 	bkb->bits_typed = 0;
 	bkb->bits_typed_size = 0;
 	bkb->option = '\0';
-	bkb->keys_tick = animations ? KEYS_ANIMATION_LEN : 255;
+	bkb->keys_tick = animations ? KEYS_ANIMATION_LEN : 0x01FF;
 	bkb->cursor_tick = 0;
 }
 
@@ -145,7 +145,7 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 	if (bkb->type_buff_size == bkb->type_buff_cap) {
 		if (side == BUI_DIR_LEFT) { // If backspace key was chosen
 			bkb->type_buff_size -= 1;
-			if (bkb->keys_tick != 255)
+			if (bkb->keys_tick != 0x01FF)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x2FF;
 		}
@@ -195,7 +195,7 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 		bkb->bits_typed_size = 0;
 		if (charsi == layout_size) { // If backspace key was chosen
 			bkb->type_buff_size -= 1;
-			if (bkb->keys_tick != 255)
+			if (bkb->keys_tick != 0x01FF)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x2FF;
 		}
@@ -203,36 +203,36 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 		switch (ch) {
 		case BUI_BKB_OPTION_NUMERICS:
 			bkb->option = BUI_BKB_OPTION_NUMERICS;
-			if (bkb->keys_tick != 255)
+			if (bkb->keys_tick != 0x01FF)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x1FF; // No character was chosen
 		case BUI_BKB_OPTION_SYMBOLS:
 			bkb->option = BUI_BKB_OPTION_SYMBOLS;
-			if (bkb->keys_tick != 255)
+			if (bkb->keys_tick != 0x01FF)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x1FF; // No character was chosen
 		case BUI_BKB_OPTION_TOGGLE_CASE:
 			bui_bkb_toggle_case(bkb->layout, bkb->layout_size);
 			bkb->option = '\0';
-			if (bkb->keys_tick != 255)
+			if (bkb->keys_tick != 0x01FF)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return 0x1FF; // No character was chosen
 		default:
 			bkb->type_buff[bkb->type_buff_size++] = ch;
 			bkb->option = '\0';
-			if (bkb->keys_tick != 255)
+			if (bkb->keys_tick != 0x01FF)
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
 			return ch;
 		}
 	}
 
-	if (bkb->keys_tick != 255)
+	if (bkb->keys_tick != 0x01FF)
 		bkb->keys_tick = 0; // Restart animation
 	return 0x1FF; // No character was chosen
 }
 
-bool bui_bkb_tick(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
-	if (elapsed == 0)
+bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
+	if (bkb->keys_tick == 0x01FF || elapsed == 0)
 		return false;
 	bool change = false;
 	if (bkb->keys_tick < KEYS_ANIMATION_LEN) {
@@ -242,11 +242,13 @@ bool bui_bkb_tick(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
 			bkb->keys_tick += elapsed;
 		change = true;
 	}
-	bool last_cursor = bkb->cursor_tick < CURSOR_ANIMATION_INT;
-	bkb->cursor_tick += elapsed % (CURSOR_ANIMATION_INT * 2);
-	bkb->cursor_tick %= CURSOR_ANIMATION_INT * 2;
-	if (last_cursor != (bool) (bkb->cursor_tick < CURSOR_ANIMATION_INT))
+	uint16_t cursor_tick = bkb->cursor_tick;
+	bool last_cursor = cursor_tick < CURSOR_ANIMATION_INT;
+	cursor_tick += elapsed % (CURSOR_ANIMATION_INT * 2);
+	cursor_tick %= CURSOR_ANIMATION_INT * 2;
+	if (last_cursor != (bool) (cursor_tick < CURSOR_ANIMATION_INT))
 		change = true;
+	bkb->cursor_tick = cursor_tick;
 	return change;
 }
 
@@ -281,7 +283,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 			bui_font_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
 					bui_font_lucida_console_8);
 		} else { // i == textbox_cursor_i
-			if (bkb->keys_tick == 255 || bkb->cursor_tick < 10)
+			if (bkb->keys_tick == 0x01FF || bkb->cursor_tick < 1000)
 				bui_fill_rect(buffer, textbox_x + textbox_cursor_i * 6 + 2, 22, 1, 7, true); // Draw cursor
 		}
 	}

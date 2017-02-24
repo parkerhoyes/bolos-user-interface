@@ -71,9 +71,7 @@ bool bui_menu_scroll(bui_menu_menu_t *menu, bool dir) {
 bool bui_menu_animate(bui_menu_menu_t *menu, uint32_t elapsed) {
 	static const uint8_t interval = 30; // The number of ms per halving of scroll position
 
-	if (elapsed == 0)
-		return false;
-	if (menu->scroll_pos == 0)
+	if (!menu->animations || elapsed == 0 || menu->scroll_pos == 0)
 		return false;
 	if (elapsed >= 10 * interval || elapsed + menu->elapsed >= 10 * interval) {
 		bool changed = menu->scroll_pos != 0;

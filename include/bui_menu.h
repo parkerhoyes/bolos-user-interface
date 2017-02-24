@@ -114,10 +114,12 @@ void bui_menu_change_elems(bui_menu_menu_t *menu, uint16_t count);
 bool bui_menu_scroll(bui_menu_menu_t *menu, bool dir);
 
 /*
- * Progress the menu's animations for the specified amount of time.
+ * Progress the menu's animations for the specified amount of time. If the menu's animations are disabled, the menu is
+ * not modified and false is returned. It is recommended that the menu be animated at a frequency of 25 Hz, passing 40
+ * as the value of elapsed.
  *
  * Args:
- *     menu: the menu; the menu must have animations enabled
+ *     menu: the menu
  *     elapsed: the number of milliseconds for which the menu's animations should be progressed; if this is 0, the menu
  *              is not modified and if this is 0xFFFFFFFF, the menu's animations are completed
  * Returns:
