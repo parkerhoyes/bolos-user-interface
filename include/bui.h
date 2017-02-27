@@ -30,7 +30,7 @@
 _Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
 
 #define BUI_VER_MAJOR 0
-#define BUI_VER_MINOR 5
+#define BUI_VER_MINOR 6
 #define BUI_VER_PATCH 0
 
 typedef struct {
