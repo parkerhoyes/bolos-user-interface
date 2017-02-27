@@ -30,7 +30,7 @@
  * https://github.com/LedgerHQ/nanos-nonsecure-firmware/tree/master/bagl/src
  */
 
-static const unsigned char bui_font_lucida_console_8_bitmaps[] = {
+static const uint8_t bui_font_lucida_console_8_bitmaps[] = {
 	// character code 0x20
 	0x00, 0x00, 0x00, 0x00, 0x00,
 	// character code 0x21
@@ -612,7 +612,7 @@ static const bui_font_char_t bui_font_lucida_console_8_characters[] = {
 	{5, 955}, // character code 0xFF
 };
 
-static const bui_font_t bui_font_lucida_console_8 = {
+static const bui_font_t bui_font_data_lucida_console_8 = {
 	.data = {
 		8, 8, 0, 0x20, 0xFF,
 		bui_font_lucida_console_8_characters,

@@ -44,9 +44,9 @@ typedef struct {
 	uint8_t bits_typed; // The sequence of "bits" inputted by the user, starting at the MSB (0 is left, 1 is right)
 	uint8_t bits_typed_size; // The number of "bits" inputted by the user (the number of left / right choices)
 	char option; // Specifies the active sub-menu for a particular set of characters; '\0' is none
-	uint8_t keys_tick; // The animation ticker for key animations, in 10 ms increments; 255 is no animations,
-	                   // KEYS_ANIMATION_LEN is done
-	uint8_t cursor_tick; // The animation ticker for the cursor blink animation, in 10 ms increments
+	uint16_t keys_tick : 9; // The animation ticker for key animations, in milliseconds; 0x01FF is no animations,
+	                        // KEYS_ANIMATION_LEN is done
+	uint16_t cursor_tick : 11; // The animation ticker for the cursor blink animation, in milliseconds
 } bui_bkb_bkb_t;
 
 extern const char bui_bkb_layout_alphabetic[26];
@@ -62,14 +62,14 @@ extern const char bui_bkb_layout_standard[30];
  * Args:
  *     bkb: the preallocated keyboard
  *     layout: a string containing all of the characters to be displayed on the keyboard, in order; all characters must
- *            be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only whitespace character allowed is a space;
+ *            be displayable in the font bui_font_lucida_console_8; the only whitespace character allowed is a space;
  *            the character OPTION_NUMERICS is a special character that will provide an option to type in numeric digits
  *            from 0 to 9; the character OPTION_SYMBOLS is a special character that will provide an option to type in
  *            symbols; the character OPTION_TOGGLE_CASE is a special character that will toggle the case of all
  *            alphabetic characters available for the user to choose from; if empty, this may be NULL
  *     layout_size: the length of the layout string; must be <= 35
  *     type_buff: the buffer used to contain the text in the keyboard's textbox, encoded in ASCII with no
- *            null-terminator; all characters must be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only
+ *            null-terminator; all characters must be displayable in the font bui_font_lucida_console_8; the only
  *            whitespace character allowed is a space
  *     type_buff_size: the number of characters currently in type_buff
  *     type_buff_cap: the maximum capacity of type_buff; also the maximum number of characters the keyboard will allow
@@ -92,17 +92,18 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
 int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
 
 /*
- * Indicate that a single animation tick has passed. If animations for the specified keyboard are disabled, this
- * function should never be called. If they are enabled, it is recommended that this function is called at a rate of 25
- * Hz (and preferrably the keyboard should be drawn at the same rate), passing 4 as the value of elapsed.
+ * Progress the keyboard's animations for the specified amount of time. If the keyboard's animations are disabled, the
+ * keyboard is not modified and false is returned. It is recommended that the keyboard be animated at a frequency of 25
+ * Hz, passing 40 as the value of elapsed.
  *
  * Args:
- *     bkb: the keyboard, with animations enabled
- *     elapsed: the time elapsed since the last call to this function, in 10 ms increments (value of 4 recommended)
+ *     bkb: the keyboard
+ *     elapsed: the number of milliseconds for which the keyboard's animations should be progressed; if this is 0, the
+ *              keyboard is not modified and if this is 0xFFFFFFFF, the keyboard's animations are completed
  * Returns:
- *     true if the tick may have resulted in a change in the way the keyboard is drawn, false otherwise
+ *     true if the appearance of the keyboard may have been modified by this function, false otherwise
  */
-bool bui_bkb_tick(bui_bkb_bkb_t *bkb, uint32_t elapsed);
+bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed);
 
 /*
  * Draw the specified keyboard onto the specified display buffer.
@@ -119,7 +120,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer);
  * Args:
  *     bkb: the keyboard
  *     type_buff: the buffer used to contain the text in the keyboard's textbox, encoded in ASCII with no
- *            null-terminator; all characters must be displayable in the font BUI_FONT_LUCIDA_CONSOLE_8; the only
+ *            null-terminator; all characters must be displayable in the font bui_font_lucida_console_8; the only
  *            whitespace character allowed is a space
  *     type_buff_size: the number of characters currently in type_buff
  *     type_buff_cap: the maximum capacity of type_buff; also the maximum number of characters the keyboard will allow

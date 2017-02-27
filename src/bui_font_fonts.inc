@@ -21,118 +21,101 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_COMIC_SANS_MS_20
+
+#ifndef BUI_FONT_EXCLUDE_COMIC_SANS_MS_20
 #include "fonts/bui_font_comic_sans_ms_20.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_LUCIDA_CONSOLE_8
-#include "fonts/bui_font_lucida_console_8.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_LUCIDA_CONSOLE_15
-#include "fonts/bui_font_lucida_console_15.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_BOLD_13
-#include "fonts/bui_font_open_sans_bold_13.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_BOLD_21
-#include "fonts/bui_font_open_sans_bold_21.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_EXTRABOLD_11
-#include "fonts/bui_font_open_sans_extrabold_11.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_13
-#include "fonts/bui_font_open_sans_light_13.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_14
-#include "fonts/bui_font_open_sans_light_14.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_16
-#include "fonts/bui_font_open_sans_light_16.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_20
-#include "fonts/bui_font_open_sans_light_20.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_21
-#include "fonts/bui_font_open_sans_light_21.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_32
-#include "fonts/bui_font_open_sans_light_32.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_REGULAR_11
-#include "fonts/bui_font_open_sans_regular_11.inc"
-#endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_SEMIBOLD_18
-#include "fonts/bui_font_open_sans_semibold_18.inc"
+const bui_font_id_t bui_font_comic_sans_ms_20 = &bui_font_data_comic_sans_ms_20;
+#else
+const bui_font_id_t bui_font_comic_sans_ms_20 = NULL;
 #endif
 
-static const bui_font_t * const bui_fonts[] = {
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_COMIC_SANS_MS_20
-	&bui_font_comic_sans_ms_20,
+#ifndef BUI_FONT_EXCLUDE_LUCIDA_CONSOLE_8
+#include "fonts/bui_font_lucida_console_8.inc"
+const bui_font_id_t bui_font_lucida_console_8 = &bui_font_data_lucida_console_8;
 #else
-	NULL,
+const bui_font_id_t bui_font_lucida_console_8 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_LUCIDA_CONSOLE_8
-	&bui_font_lucida_console_8,
+
+#ifndef BUI_FONT_EXCLUDE_LUCIDA_CONSOLE_15
+#include "fonts/bui_font_lucida_console_15.inc"
+const bui_font_id_t bui_font_lucida_console_15 = &bui_font_data_lucida_console_15;
 #else
-	NULL,
+const bui_font_id_t bui_font_lucida_console_15 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_LUCIDA_CONSOLE_15
-	&bui_font_lucida_console_15,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_BOLD_13
+#include "fonts/bui_font_open_sans_bold_13.inc"
+const bui_font_id_t bui_font_open_sans_bold_13 = &bui_font_data_open_sans_bold_13;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_bold_13 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_BOLD_13
-	&bui_font_open_sans_bold_13,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_BOLD_21
+#include "fonts/bui_font_open_sans_bold_21.inc"
+const bui_font_id_t bui_font_open_sans_bold_21 = &bui_font_data_open_sans_bold_21;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_bold_21 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_BOLD_21
-	&bui_font_open_sans_bold_21,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_EXTRABOLD_11
+#include "fonts/bui_font_open_sans_extrabold_11.inc"
+const bui_font_id_t bui_font_open_sans_extrabold_11 = &bui_font_data_open_sans_extrabold_11;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_extrabold_11 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_EXTRABOLD_11
-	&bui_font_open_sans_extrabold_11,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_LIGHT_13
+#include "fonts/bui_font_open_sans_light_13.inc"
+const bui_font_id_t bui_font_open_sans_light_13 = &bui_font_data_open_sans_light_13;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_light_13 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_13
-	&bui_font_open_sans_light_13,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_LIGHT_14
+#include "fonts/bui_font_open_sans_light_14.inc"
+const bui_font_id_t bui_font_open_sans_light_14 = &bui_font_data_open_sans_light_14;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_light_14 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_14
-	&bui_font_open_sans_light_14,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_LIGHT_16
+#include "fonts/bui_font_open_sans_light_16.inc"
+const bui_font_id_t bui_font_open_sans_light_16 = &bui_font_data_open_sans_light_16;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_light_16 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_16
-	&bui_font_open_sans_light_16,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_LIGHT_20
+#include "fonts/bui_font_open_sans_light_20.inc"
+const bui_font_id_t bui_font_open_sans_light_20 = &bui_font_data_open_sans_light_20;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_light_20 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_20
-	&bui_font_open_sans_light_20,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_LIGHT_21
+#include "fonts/bui_font_open_sans_light_21.inc"
+const bui_font_id_t bui_font_open_sans_light_21 = &bui_font_data_open_sans_light_21;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_light_21 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_21
-	&bui_font_open_sans_light_21,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_LIGHT_32
+#include "fonts/bui_font_open_sans_light_32.inc"
+const bui_font_id_t bui_font_open_sans_light_32 = &bui_font_data_open_sans_light_32;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_light_32 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_LIGHT_32
-	&bui_font_open_sans_light_32,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_REGULAR_11
+#include "fonts/bui_font_open_sans_regular_11.inc"
+const bui_font_id_t bui_font_open_sans_regular_11 = &bui_font_data_open_sans_regular_11;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_regular_11 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_REGULAR_11
-	&bui_font_open_sans_regular_11,
+
+#ifndef BUI_FONT_EXCLUDE_OPEN_SANS_SEMIBOLD_18
+#include "fonts/bui_font_open_sans_semibold_18.inc"
+const bui_font_id_t bui_font_open_sans_semibold_18 = &bui_font_data_open_sans_semibold_18;
 #else
-	NULL,
+const bui_font_id_t bui_font_open_sans_semibold_18 = NULL;
 #endif
-#if !defined BUI_FONT_CHOOSE || defined BUI_FONT_INCLUDE_OPEN_SANS_SEMIBOLD_18
-	&bui_font_open_sans_semibold_18,
-#else
-	NULL,
-#endif
-};

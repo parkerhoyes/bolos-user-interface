@@ -34,88 +34,52 @@
 #include "bui_bitmaps.inc"
 
 /*
- * Get a 32 bit integer storing some or all of the data for a single row of a bitmap.
+ * Perform a bitwise OR with a sequence of bits from one location to another. The source and destination sequences may
+ * not be overlapping. No bytes that do not contain bits in either of the source or destination sequences are accessed.
  *
  * Args:
- *     bitmap: the pointer to the bitmap from which to get a row
- *     w: the width, in number of bits, of a single row in the bitmap; must be >= 1
- *     n: the number of the row from which to retrieve data from the bitmap
- *     o: an offset value in number of bits; must be < w
- * Returns:
- *     a 32 bit integer containing the sequence of bits starting at bit number n * w + o in the bitmap,
- *     truncated to w or 32 bits, whichever is lesser; the bit sequence begins at the most significant bit in the int
+ *     src: the pointer to the byte containing the first bit in the source sequence
+ *     src_o: the index of the first bit in the source sequence in its byte (0 for most significant bit, 7 for least);
+ *            must be <= 7
+ *     dest: the pointer to the byte containing the first bit in the destination sequence
+ *     dest_o: the index of the first bit in the destination sequence in its byte (0 for most significant bit, 7 for
+ *             least); must be <= 7
+ *     n: the number of bits to OR; also the number of bits in each of the source and destination sequences
  */
-static uint32_t bui_get_bitmap_row_32(const unsigned char *bitmap, uint32_t w, uint32_t n, uint32_t o) {
-	uint64_t row = 0;
-	uint32_t fi = n * w + o; // The index of the first bit to retrieve within the entire bitmap
-	w -= o;
-	uint32_t li = fi + (w <= 32 ? w : 32); // The index after the last bit to retrieve within the entire bitmap
-	uint8_t fb = fi % 8; // The index of the first bit to retrieve within a byte
-	uint8_t lb = li % 8; // The index after the last bit to retrieve within a byte
-	for (uint32_t i = fi / 8; i <= (li - 1) / 8; i++) {
-		uint8_t b = bitmap[i];
-		// Truncate the current byte, if necessary
-		if (i == li / 8 && lb != 0) {
-			b >>= 8 - lb;
-			b <<= 8 - lb;
+static inline void bui_bitblit_or(const uint8_t *src, uint8_t src_o, uint8_t *dest, uint8_t dest_o, uint32_t n) {
+	while (true) {
+		if (n >= 8) {
+			uint8_t bits = src[0] << src_o;
+			if (src_o != 0)
+				bits |= src[1] >> (8 - src_o);
+			dest[0] |= bits >> dest_o;
+			if (dest_o != 0) {
+				dest[1] |= bits << (8 - dest_o);
+			}
+			src++;
+			dest++;
+			n -= 8;
+		} else if (n == 0) {
+			break;
+		} else { // n is in [1, 7]
+			uint8_t bits = src[0] << src_o;
+			if (8 - src_o < n)
+				bits |= src[1] >> (8 - src_o);
+			bits &= ~(0xFF >> n);
+			dest[0] |= bits >> dest_o;
+			if (8 - dest_o < n) {
+				dest[1] |= bits << (8 - dest_o);
+			}
+			break;
 		}
-		row |= (uint64_t) b << ((4 + (fi / 8) - i) * 8);
 	}
-	row >>= 8 - fb;
-	return (uint32_t) row;
-}
-
-/*
- * Shift the bits in a 128-bit array to the right by the specified number of bits.
- *
- * Args:
- *     arr: the pointer to the array of bits which is a sequence of four 32-bit ints, big-endian
- *     shift: the number of bits by which to shift to the right
- */
-static void bui_rshift_128(uint32_t *arr, uint8_t shift) {
-	if (shift <= 0 || shift >= 128) {
-		*arr++ = 0;
-		*arr++ = 0;
-		*arr++ = 0;
-		*arr = 0;
-		return;
-	}
-	if (shift >= 96) {
-		arr[3] = arr[0];
-		arr[2] = 0;
-		arr[1] = 0;
-		arr[0] = 0;
-		shift -= 96;
-	} else if (shift >= 64) {
-		arr[3] = arr[1];
-		arr[2] = arr[0];
-		arr[1] = 0;
-		arr[0] = 0;
-		shift -= 64;
-	} else if (shift >= 32) {
-		arr[3] = arr[2];
-		arr[2] = arr[1];
-		arr[1] = arr[0];
-		arr[0] = 0;
-		shift -= 32;
-	}
-	if (shift == 0)
-		return;
-	uint32_t mask = (1 << shift) - 1;
-	arr[3] >>= shift;
-	arr[3] |= (arr[2] & mask) << (32 - shift);
-	arr[2] >>= shift;
-	arr[2] |= (arr[1] & mask) << (32 - shift);
-	arr[1] >>= shift;
-	arr[1] |= (arr[0] & mask) << (32 - shift);
-	arr[0] >>= shift;
 }
 
 int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress) {
 	unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
-	unsigned char section[64];
-	for (int i = 0; i < 64; i++)
-		section[i] = buffer->bitmap[511 - progress * 64 - i];
+	uint8_t section[64];
+	for (uint8_t i = 0; i < 64; i++)
+		section[i] = buffer->bb[511 - progress * 64 - i];
 	io_seproxyhal_display_bitmap(0, progress * 4, 128, 4, color_index, 1, section);
 	if (progress != 7)
 		return ++progress;
@@ -124,42 +88,49 @@ int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress) {
 }
 
 void bui_fill(bui_bitmap_128x32_t *buffer, bool color) {
-	os_memset(buffer->bitmap, color ? 0xFF : 0x00, sizeof(buffer->bitmap));
+	os_memset(buffer->bb, color ? 0xFF : 0x00, sizeof(buffer->bb));
 }
 
 void bui_invert(bui_bitmap_128x32_t *buffer) {
-	uint32_t *end = (uint32_t*) &buffer->bitmap[512];
-	for (uint32_t *ptr = (uint32_t*) &buffer->bitmap[0]; ptr != end; ptr++) {
+	uint32_t *end = (uint32_t*) &buffer->bb[512];
+	for (uint32_t *ptr = (uint32_t*) &buffer->bb[0]; ptr != end; ptr++) {
 		*ptr = ~(*ptr);
 	}
 }
 
-void bui_fill_rect(bui_bitmap_128x32_t *buffer, int x, int y, int w, int h, bool color) {
-	if (x >= 128 || y >= 32 || w == 0 || h == 0)
-		return;
-	if (x < 0)
+void bui_fill_rect(bui_bitmap_128x32_t *buffer, int16_t x16, int16_t y16, int16_t w16, int16_t h16, bool color) {
+	int32_t x = x16, y = y16, w = w16, h = h16;
+	if (x < 0) {
+		w += x;
 		x = 0;
-	if (y < 0)
+	}
+	if (y < 0) {
+		h += y;
 		y = 0;
+	}
+	if (w <= 0 || h <= 0)
+		return;
+	if (x >= 128 || y >= 32)
+		return;
 	if (x + w > 128)
 		w = 128 - x;
 	if (y + h > 32)
 		h = 32 - y;
-	// Reflect coordinates
-	x = 128 - x - w;
-	y = 32 - y - h;
-	w += x; // w is now the x-coord just beyond the bottom right corner
-	h += y; // h is now the y-coord just beyond the bottom right corner
-	for (int i = y; i < h; i++) {
-		uint8_t *row = &buffer->bitmap[i * 16];
-		for (int j = 32; j != 160; j += 32) { // Iterate through all four 32 bit sequences in the row
-			if (x < j && w > j - 32) { // Only need to blit if current long is within rectangle
-				uint32_t mask = 0xFFFFFFFF; // The mask used to blit onto the current long
-				if (x > j - 32) { // If some bits need to be shaved off the start of the mask
-					mask >>= x % 32;
+	// Calculate reflected coordinates
+	int32_t x1r = 128 - x - w; // index of the first column in the 2D bit array to be modified
+	int32_t y1r = 32 - y - h; // index of the first row in the 2D bit array to be modified
+	int32_t x2r = x1r + w; // index just beyond the last column in the 2D bit array to be modified
+	int32_t y2r = y1r + h; // index just beyond the last row in the 2D bit array to be modified
+	for (int32_t i = y1r; i < y2r; i++) {
+		uint8_t *row = &buffer->bb[i * 16];
+		for (int32_t j = 32; j != 160; j += 32) { // Iterate through all four 32 bit sequences in the row
+			if (x1r < j && x2r > j - 32) { // Only need to blit if current 32 bit sequence is within rectangle
+				uint32_t mask = 0xFFFFFFFF; // The mask used to blit onto the current 32 bit sequence
+				if (x1r > j - 32) { // If some bits need to be shaved off the start of the mask
+					mask >>= x1r % 32;
 				}
-				if (w < j) { // If some bits need to be shaved off the end of the mask
-					unsigned int s = j - w;
+				if (x2r < j) { // If some bits need to be shaved off the end of the mask
+					uint32_t s = j - x2r;
 					mask >>= s;
 					mask <<= s;
 				}
@@ -182,7 +153,7 @@ void bui_fill_rect(bui_bitmap_128x32_t *buffer, int x, int y, int w, int h, bool
 	}
 }
 
-void bui_set_pixel(bui_bitmap_128x32_t *buffer, int x, int y, bool color) {
+void bui_set_pixel(bui_bitmap_128x32_t *buffer, int16_t x, int16_t y, bool color) {
 	if (x < 0 || x >= 128 || y < 0 || y >= 32)
 		return;
 	// Reflect coordinates
@@ -194,16 +165,17 @@ void bui_set_pixel(bui_bitmap_128x32_t *buffer, int x, int y, bool color) {
 	dest_bit %= 8;
 	// Blit
 	if (color)
-		buffer->bitmap[dest_byte] |= 0x80 >> dest_bit;
+		buffer->bb[dest_byte] |= 0x80 >> dest_bit;
 	else
-		buffer->bitmap[dest_byte] &= ~(0x80 >> dest_bit);
+		buffer->bb[dest_byte] &= ~(0x80 >> dest_bit);
 }
 
-void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, int bitmap_w, int src_x, int src_y,
-		int dest_x, int dest_y, int w, int h) {
-	if (dest_x >= 128 || dest_y >= 32 || w == 0 || h == 0 || dest_x + w <= 0 || dest_y + h <= 0)
+void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, bui_const_bitmap_t bitmap, int16_t src_x16, int16_t src_y16,
+			int16_t dest_x16, int16_t dest_y16, int16_t w16, int16_t h16) {
+	int32_t src_x = src_x16, src_y = src_y16, dest_x = dest_x16, dest_y = dest_y16, w = w16, h = h16;
+	if (bitmap.w == 0 || bitmap.h == 0)
 		return;
-	// Shift source and destination coordinates such that the destination rectangle is entirely contained in the display
+	// Shift source and destination coordinates to fit in their coordinate planes
 	if (dest_x < 0) {
 		src_x -= dest_x;
 		w += dest_x;
@@ -214,54 +186,40 @@ void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, const unsigned char *bitmap, i
 		h += dest_y;
 		dest_y = 0;
 	}
-	// Truncate width and height to fit within screen
+	if (src_x < 0) {
+		dest_x -= src_x;
+		w += src_x;
+		src_x = 0;
+	}
+	if (src_y < 0) {
+		dest_y -= src_y;
+		h += src_y;
+		src_y = 0;
+	}
+	if (w <= 0 || h <= 0)
+		return;
+	if (dest_x >= 128 || dest_y >= 32 || src_x >= bitmap.w || src_y >= bitmap.h)
+		return;
 	if (dest_x + w > 128)
 		w = 128 - dest_x;
 	if (dest_y + h > 32)
 		h = 32 - dest_y;
+	if (src_x + w > bitmap.w)
+		w = bitmap.w - src_x;
+	if (src_y + h > bitmap.h)
+		h = bitmap.h - src_y;
 	// Reflect coordinates
-	dest_x = 128 - dest_x - w;
-	dest_y = 32 - dest_y - h;
-	w += dest_x; // w is now the x-coord just beyond the bottom right corner, reflected
-	h += dest_y; // h is now the y-coord just beyond the bottom right corner, reflected
-	for (int i = dest_y; i < h; i++) {
-		// Load data from the bitmap for the current row into a buffer and align it
-		uint32_t source_row[4] = {0, 0, 0, 0};
-		for (uint8_t j = 0; j <= (w - 1) / 32; j++) {
-			source_row[j] = bui_get_bitmap_row_32(bitmap, bitmap_w, i - dest_y, src_x + j * 32);
-		}
-		bui_rshift_128(source_row, dest_x);
-		uint8_t *dest_row = &buffer->bitmap[i * 16];
-		for (int j = 32; j != 160; j += 32) { // Iterate through all four 32 bit sequences in the row
-			if (dest_x < j && w > j - 32) { // Only need to blit if current long is within rectangle
-				uint32_t mask = 0xFFFFFFFF; // The mask used to blit onto the current long
-				if (dest_x > j - 32) { // If some bits need to be shaved off the start of the mask
-					mask >>= dest_x % 32;
-				}
-				if (w < j) { // If some bits need to be shaved off the end of the mask
-					int s = j - w;
-					mask >>= s;
-					mask <<= s;
-				}
-				// Blit part of the source row onto part of the destination row
-				dest_row += 3;
-				*dest_row = (*dest_row & ~((uint8_t) mask)) | ((uint8_t) source_row[j / 32 - 1] & (uint8_t) mask);
-				dest_row--;
-				mask >>= 8;
-				source_row[j / 32 - 1] >>= 8;
-				*dest_row = (*dest_row & ~((uint8_t) mask)) | ((uint8_t) source_row[j / 32 - 1] & (uint8_t) mask);
-				dest_row--;
-				mask >>= 8;
-				source_row[j / 32 - 1] >>= 8;
-				*dest_row = (*dest_row & ~((uint8_t) mask)) | ((uint8_t) source_row[j / 32 - 1] & (uint8_t) mask);
-				dest_row--;
-				mask >>= 8;
-				source_row[j / 32 - 1] >>= 8;
-				*dest_row = (*dest_row & ~((uint8_t) mask)) | ((uint8_t) source_row[j / 32 - 1] & (uint8_t) mask);
-				dest_row += 4;
-			} else {
-				dest_row += 4;
-			}
-		}
+	src_x = bitmap.w - src_x - w;
+	src_y = bitmap.h - src_y - h;
+	dest_x = 128 - dest_x - w; // index of the first column in the 2D bit array to be modified
+	dest_y = 32 - dest_y - h; // index of the first row in the 2D bit array to be modified
+	for (int32_t i = 0; i < h; i++) {
+		uint32_t src_o = (src_y + i) * bitmap.w + src_x;
+		uint32_t src_i = src_o / 8;
+		src_o %= 8;
+		uint32_t dest_o = (dest_y + i) * 128 + dest_x;
+		uint32_t dest_i = dest_o / 8;
+		dest_o %= 8;
+		bui_bitblit_or(&bitmap.bb[src_i], src_o, &buffer->bb[dest_i], dest_o, w);
 	}
 }
