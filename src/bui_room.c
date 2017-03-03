@@ -37,11 +37,10 @@ _Static_assert(sizeof(uint16_t) == 2, "sizeof(uint16_t) must be 2");
 
 #define BUI_ROOM_PAD(ptr) ((4 - ((uintptr_t) (ptr) & 0x3)) & 0x3)
 
-void bui_room_ctx_init(bui_room_ctx_t *ctx, uint8_t *stack, const bui_room_t *room, const void *args,
-		uint16_t args_size) {
-	stack += BUI_ROOM_PAD(stack);
+void bui_room_ctx_init(bui_room_ctx_t *ctx, void *stack, const bui_room_t *room, const void *args, uint16_t args_size) {
+	stack = (uint8_t*) stack + BUI_ROOM_PAD(stack);
 	*((const bui_room_t**) stack) = (const bui_room_t*) PIC(room);
-	stack += sizeof(const bui_room_t*);
+	stack = (uint8_t*) stack + sizeof(const bui_room_t*);
 	ctx->stack_ptr = stack;
 	ctx->frame_ptr = stack;
 	if (args_size != 0)
@@ -52,14 +51,12 @@ void bui_room_ctx_init(bui_room_ctx_t *ctx, uint8_t *stack, const bui_room_t *ro
 void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *args, uint16_t args_size) {
 	bui_room_current_exit(ctx, true);
 	uint8_t pad = BUI_ROOM_PAD(ctx->stack_ptr + 3);
-	uint16_t frame_size = (uint16_t) (ctx->stack_ptr - ctx->frame_ptr);
-	ctx->stack_ptr += pad;
-	*ctx->stack_ptr++ = pad;
-	*((uint16_t*) ctx->stack_ptr) = frame_size;
-	ctx->stack_ptr += 2;
+	uint16_t frame_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
+	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + pad;
+	*((uint8_t*) ctx->stack_ptr)++ = pad;
+	*((uint16_t*) ctx->stack_ptr)++ = frame_size;
 	room = (const bui_room_t*) PIC(room);
-	*((const bui_room_t**) ctx->stack_ptr) = room;
-	ctx->stack_ptr += 4;
+	*((const bui_room_t**) ctx->stack_ptr)++ = room;
 	ctx->frame_ptr = ctx->stack_ptr;
 	if (args_size != 0)
 		bui_room_push(ctx, args, args_size);
@@ -68,18 +65,18 @@ void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *arg
 
 void bui_room_exit(bui_room_ctx_t *ctx) {
 	bui_room_current_exit(ctx, false);
-	uint16_t ret_size = ctx->stack_ptr - ctx->frame_ptr;
+	uint16_t ret_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	void *ret = ctx->frame_ptr;
-	ctx->frame_ptr -= sizeof(const bui_room_t*) + sizeof(uint16_t);
+	ctx->frame_ptr = (uint8_t*) ctx->frame_ptr - (sizeof(const bui_room_t*) + sizeof(uint16_t));
 	uint16_t frame_size = *((uint16_t*) ctx->frame_ptr);
-	ctx->frame_ptr -= 1;
-	uint8_t pad = *ctx->frame_ptr;
-	ctx->frame_ptr -= pad;
+	ctx->frame_ptr = (uint8_t*) ctx->frame_ptr - 1;
+	uint8_t pad = *((uint8_t*) ctx->frame_ptr);
+	ctx->frame_ptr = (uint8_t*) ctx->frame_ptr - pad;
 	ctx->stack_ptr = ctx->frame_ptr;
-	ctx->frame_ptr -= frame_size;
+	ctx->frame_ptr = (uint8_t*) ctx->frame_ptr - frame_size;
 	if (ret_size != 0) {
 		os_memmove(ctx->stack_ptr, ret, ret_size);
-		ctx->stack_ptr += ret_size;
+		ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + ret_size;
 	}
 	bui_room_current_enter(ctx, false);
 }
@@ -94,27 +91,27 @@ void bui_room_dealloc_frame(bui_room_ctx_t *ctx) {
 
 void bui_room_push(bui_room_ctx_t *ctx, const void *src, uint16_t size) {
 	os_memcpy(ctx->stack_ptr, src, size);
-	ctx->stack_ptr += size;
+	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + size;
 }
 
 void bui_room_pop(bui_room_ctx_t *ctx, void *dest, uint16_t size) {
-	ctx->stack_ptr -= size;
+	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr - size;
 	os_memcpy(dest, ctx->stack_ptr, size);
 }
 
 void bui_room_peek(const bui_room_ctx_t *ctx, void *dest, uint16_t size, uint16_t offset) {
-	os_memcpy(dest, ctx->stack_ptr - offset, size);
+	os_memcpy(dest, (uint8_t*) ctx->stack_ptr - offset, size);
 }
 
 void* bui_room_alloc(bui_room_ctx_t *ctx, uint16_t size) {
 	uint8_t *ptr = ctx->stack_ptr;
-	ctx->stack_ptr += size;
+	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + size;
 	return ptr;
 }
 
 void* bui_room_dealloc(bui_room_ctx_t *ctx, uint16_t size) {
 	uint8_t *ptr = ctx->stack_ptr;
-	ctx->stack_ptr -= size;
+	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr - size;
 	return ptr;
 }
 

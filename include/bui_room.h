@@ -59,8 +59,9 @@ typedef struct bui_room_t bui_room_t;
  *   amount of memory allocated for a room's local use is the stack pointer minus the frame pointer.
  */
 typedef struct {
-	uint8_t *stack_ptr;
-	uint8_t *frame_ptr;
+	// It is recommended that these pointers be aligned to 4-byte boundaries to save space
+	void *stack_ptr;
+	void *frame_ptr;
 } bui_room_ctx_t;
 
 /*
@@ -170,8 +171,7 @@ struct bui_room_t {
  *           dereferenced if args_size is 0
  *     args_size: the size of the arguments to be copied onto the stack, in bytes, or zero to copy no arguments
  */
-void bui_room_ctx_init(bui_room_ctx_t *ctx, uint8_t *stack, const bui_room_t *room, const void *args,
-		uint16_t args_size);
+void bui_room_ctx_init(bui_room_ctx_t *ctx, void *stack, const bui_room_t *room, const void *args, uint16_t args_size);
 
 /*
  * Enter the specified room by creating a new stack frame that contains the provided arguments. The current room's exit
