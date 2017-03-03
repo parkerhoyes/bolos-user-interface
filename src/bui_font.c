@@ -30,26 +30,17 @@
 
 #include "bui.h"
 
-typedef struct {
-	uint8_t char_width; // Character width, in pixels
+typedef struct __attribute__((packed)) {
 	uint16_t bitmap_offset; // The starting index of the character's bitmap in the font bitmap
+	uint8_t char_width; // Character width, in pixels
 } bui_font_char_t;
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
-typedef struct {
-	uint8_t char_height;
-	uint8_t baseline_height;
-	uint8_t char_kerning;
-	uint8_t first_char; // Character code of the first character in the font bitmap
-	uint8_t last_char; // Character code of the last character in the font bitmap
+typedef struct __attribute__((packed)) {
+	bui_font_info_t info;
 	const bui_font_char_t *chars;
 	const uint8_t *bitmaps; // Array of bitmaps for all characters
 } bui_font_data_t;
-
-typedef union {
-	bui_font_data_t data;
-	bui_font_info_t info;
-} bui_font_t;
 
 #include "bui_font_fonts.inc"
 
@@ -76,7 +67,8 @@ const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t 
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
 	chari -= font_data->first_char;
-	bui_font_char_t font_char = ((const bui_font_char_t*) PIC(font_data->chars))[chari];
+	bui_font_char_t font_char;
+	os_memcpy(font_char, &((const bui_font_char_t*) PIC(font_data->chars))[chari], sizeof(bui_font_char_t));
 	if (w_dest != NULL)
 		*w_dest = font_char.char_width;
 	return (const uint8_t*) PIC(font_data->bitmaps) + font_char.bitmap_offset;

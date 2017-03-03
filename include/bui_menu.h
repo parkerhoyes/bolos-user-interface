@@ -58,8 +58,10 @@ typedef void (*bui_menu_elem_draw_callback_t)(const bui_menu_menu_t *menu, uint8
 // may be changed between versions without warning, and all fields other than the callback fields should never be
 // accessed or modified by code external to this module (bui_menu).
 struct bui_menu_menu_t {
-	// The number of elements in the menu
-	uint8_t count;
+	// The callback used to get the size of menu elements
+	bui_menu_elem_size_callback_t elem_size_callback;
+	// The callback used to draw menu elements
+	bui_menu_elem_draw_callback_t elem_draw_callback;
 	// The index of the focused element
 	uint8_t focus : 8;
 	// True if animations are enabled, false otherwise
@@ -68,10 +70,8 @@ struct bui_menu_menu_t {
 	uint8_t elapsed : 5;
 	// The current y-coordinate of the viewport, relative to the target y-coordinate (if animations are enabled)
 	int32_t scroll_pos : 18;
-	// The callback used to get the size of menu elements
-	bui_menu_elem_size_callback_t elem_size_callback;
-	// The callback used to draw menu elements
-	bui_menu_elem_draw_callback_t elem_draw_callback;
+	// The number of elements in the menu
+	uint8_t count;
 };
 
 /*
