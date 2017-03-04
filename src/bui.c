@@ -235,6 +235,23 @@ void bui_bm_invert(bui_bitmap_t bm) {
 	*end ^= mask;
 }
 
+void bui_bm_draw_pixel(bui_bitmap_t bm, int16_t x, int16_t y, bool color) {
+	if (x < 0 || x >= bm.w || y < 0 || y >= bm.h)
+		return;
+	// Reflect coordinates
+	x = bm.w - x;
+	y = bm.h - y;
+	// Find destination
+	uint32_t dest_bit = y * bm.w + x;
+	uint32_t dest_byte = dest_bit / 8;
+	dest_bit %= 8;
+	// Set the target bit
+	if (color)
+		bm.bb[dest_byte] |= 0x80 >> dest_bit;
+	else
+		bm.bb[dest_byte] &= ~(0x80 >> dest_bit);
+}
+
 void bui_ctx_init(bui_ctx_t *ctx) {
 	os_memset(ctx->bb, 0, sizeof(ctx->bb));
 	ctx->dirty_x = 0;
@@ -356,17 +373,17 @@ void bui_ctx_draw_pixel(bui_ctx_t *ctx, int16_t x, int16_t y, bool color) {
 	// Extend the dirty rectangle
 	bui_ctx_dirty(ctx, x, y, 1, 1);
 	// Reflect coordinates
-	x = bm.w - x;
-	y = bm.h - y;
+	x = 127 - x;
+	y = 31 - y;
 	// Find destination
-	uint32_t dest_bit = y * bm.w + x;
+	uint32_t dest_bit = y * 128 + x;
 	uint32_t dest_byte = dest_bit / 8;
 	dest_bit %= 8;
 	// Set the target bit
 	if (color)
-		bm.bb[dest_byte] |= 0x80 >> dest_bit;
+		ctx->bb[dest_byte] |= 0x80 >> dest_bit;
 	else
-		bm.bb[dest_byte] &= ~(0x80 >> dest_bit);
+		ctx->bb[dest_byte] &= ~(0x80 >> dest_bit);
 }
 
 void bui_ctx_draw_bitmap(bui_ctx_t *ctx, bui_const_bitmap_t bm, int16_t src_x16, int16_t src_y16, int16_t dest_x16,

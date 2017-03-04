@@ -241,6 +241,18 @@ void bui_bm_fill(bui_bitmap_t bm, bool color);
 void bui_bm_invert(bui_bitmap_t bm);
 
 /*
+ * Set the color of a single pixel in the provided bitmap. If the coordinates of the pixel are out of bounds of the
+ * bitmap, the bitmap is not accessed.
+ *
+ * Args:
+ *     bm: the bitmap onto which the pixel is to be drawn
+ *     x: the x-coordinate of the pixel to be drawn
+ *     y: the y-coordinate of the pixel to be drawn
+ *     color: the color to which the pixel is to be set; true corresponds to a 1 bit and false to a 0 bit
+ */
+void bui_bm_draw_pixel(bui_bitmap_t bm, int16_t x, int16_t y, bool color);
+
+/*
  * Initialize / reset a BUI context. The context's display buffer is initially filled with the background color.
  *
  * Args:
