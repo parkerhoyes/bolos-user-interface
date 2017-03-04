@@ -43,16 +43,15 @@ typedef struct bui_menu_menu_t bui_menu_menu_t;
 typedef uint8_t (*bui_menu_elem_size_callback_t)(const bui_menu_menu_t *menu, uint8_t i);
 
 /*
- * Draw a menu element.
+ * Draw a menu element in the specified BUI context.
  *
  * Args:
  *     menu: the menu
  *     i: the index of the menu element
- *     buffer: the buffer onto which the element is to be drawn
- *     y: the y-coordinate of the top of the destination in the buffer onto which the element is to be drawn
+ *     ctx: the BUI context in which the element is to be drawn
+ *     y: the y-coordinate of the top of the destination in the display onto which the element is to be drawn
  */
-typedef void (*bui_menu_elem_draw_callback_t)(const bui_menu_menu_t *menu, uint8_t i, bui_bitmap_128x32_t *buffer,
-		int16_t y);
+typedef void (*bui_menu_elem_draw_callback_t)(const bui_menu_menu_t *menu, uint8_t i, bui_ctx_t *ctx, int16_t y);
 
 // NOTE: The definition of all fields in this struct except for the callbacks are considered internal. All other fields
 // may be changed between versions without warning, and all fields other than the callback fields should never be
@@ -128,13 +127,13 @@ bool bui_menu_scroll(bui_menu_menu_t *menu, bool dir);
 bool bui_menu_animate(bui_menu_menu_t *menu, uint32_t elapsed);
 
 /*
- * Draw the menu onto the specified display buffer.
+ * Draw the menu in the specified BUI context.
  *
  * Args:
  *     menu: the menu
- *     buffer: the display buffer onto which the menu is to be drawn
+ *     ctx: the BUI context in which the menu is to be drawn
  */
-void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer);
+void bui_menu_draw(const bui_menu_menu_t *menu, bui_ctx_t *ctx);
 
 /*
  * Get the index of the currently focused element.

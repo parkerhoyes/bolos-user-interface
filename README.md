@@ -39,10 +39,8 @@ interface related utilities.
 ### Font Module
 
 The font module (which defines all symbols with the prefix `bui_font_`)
-implements basic font rendering. The function `bui_font_draw_string(...)` allows
-an application to draw a string onto a preallocated display buffer (of type
-`bui_bitmap_128x32_t`). The library includes 14 different fonts ranging from 8
-to 32 pixels in height.
+implements basic font rendering and drawing. The library includes 14 different
+fonts ranging from 8 to 32 pixels in height.
 
 ### Binary Keyboard Module
 

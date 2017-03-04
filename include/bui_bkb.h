@@ -106,16 +106,16 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
 bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed);
 
 /*
- * Draw the specified keyboard onto the specified display buffer.
+ * Draw the specified keyboard in the specified BUI context.
  *
  * Args:
  *     bkb: the keyboard to be drawn
- *     buffer: the display buffer onto which the keyboard is to be drawn
+ *     ctx: the BUI context in which the keyboard is to be drawn
  */
-void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer);
+void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx);
 
 /*
- *
+ * Set the type buffer for the specified keyboard.
  *
  * Args:
  *     bkb: the keyboard

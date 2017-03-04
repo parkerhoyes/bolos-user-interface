@@ -93,41 +93,40 @@ uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch);
 const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest);
 
 /*
-* Draw a character in the specified font onto the bottom display buffer. Any part of the character out of bounds of the
-* display will not be drawn. The coordinates provided determine the position of the text anchor. The actual bounds the
-* text is drawn within are determined by the anchor and the alignment. The alignment determines where, in the text's
-* bounds, the anchor is located. For example, an alignment of BUI_RIGHT_TOP will place the anchor at the top-most,
-* right-most position of the text's boundaries. Note that for purposes of alignment, the character's boundaries are
-* considered to extend from the font's baseline to the ascender height.
-*
-* Args:
-*     buffer: the display buffer onto which to draw the character
-*     ch: the character code of the character to be drawn
-*     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
-*     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
-*     alignment: the position of the anchor within the text boundaries
-*     font_id: the ID of the font to be used to render the character
-*/
-void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t y, bui_dir_e alignment,
-		bui_font_id_t font_id);
+ * Draw a character in the specified font in the specified BUI context. Any part of the character out of bounds of the
+ * display will not be drawn. The coordinates provided determine the position of the text anchor. The actual bounds the
+ * text is drawn within are determined by the anchor and the alignment. The alignment determines where, in the text's
+ * bounds, the anchor is located. For example, an alignment of BUI_DIR_RIGHT_TOP will place the anchor at the top-most,
+ * right-most position of the text's boundaries. Note that for purposes of alignment, the character's boundaries are
+ * considered to extend from the font's baseline to the ascender height.
+ *
+ * Args:
+ *     ctx: the BUI context in which the character is to be drawn
+ *     ch: the character code of the character to be drawn
+ *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     alignment: the position of the anchor within the text boundaries
+ *     font_id: the ID of the font to be used to render the character
+ */
+void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e alignment, bui_font_id_t font_id);
 
 /*
-* Draw a string in the specified font onto the bottom display buffer. Any part of the string out of bounds of the
-* buffer will not be drawn (the string will not wrap). The coordinates provided determine the position of the text
-* anchor. The actual bounds the text is drawn within are determined by the anchor and the alignment. The alignment
-* determines where, in the text's bounds, the anchor is located. For example, an alignment of BUI_RIGHT_TOP will place
-* the anchor at the top-most, right-most position of the text's boundaries. Note that for purposes of alignment, the
-* character's boundaries are considered to extend from the font's baseline to the ascender height.
-*
-* Args:
-*     buffer: the display buffer onto which to draw the string
-*     str: the null-terminated string to be drawn; may not be NULL
-*     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
-*     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
-*     alignment: the position of the anchor within the text boundaries
-*     font_id: the ID of the font to be used to render the string
-*/
-void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
+ * Draw a string in the specified font in the specified BUI context. Any part of the string out of bounds of the display
+ * will not be drawn (the string will not wrap). The coordinates provided determine the position of the text anchor. The
+ * actual bounds the text is drawn within are determined by the anchor and the alignment. The alignment determines
+ * where, in the text's bounds, the anchor is located. For example, an alignment of BUI_DIR_RIGHT_TOP will place the
+ * anchor at the top-most, right-most position of the text's boundaries. Note that for purposes of alignment, the
+ * character's boundaries are considered to extend from the font's baseline to the ascender height.
+ *
+ * Args:
+ *     ctx: the BUI context in which the string is to be drawn
+ *     str: the null-terminated string to be drawn; may not be NULL
+ *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
+ *     alignment: the position of the anchor within the text boundaries
+ *     font_id: the ID of the font to be used to render the string
+ */
+void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
 		bui_font_id_t font_id);
 
 #endif

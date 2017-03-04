@@ -85,7 +85,7 @@ bool bui_menu_animate(bui_menu_menu_t *menu, uint32_t elapsed) {
 	return true;
 }
 
-void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer) {
+void bui_menu_draw(const bui_menu_menu_t *menu, bui_ctx_t *ctx) {
 	uint8_t count = menu->count;
 	if (count == 0)
 		return;
@@ -93,9 +93,9 @@ void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer) {
 
 	// Draw arrows
 	if (focus != 0)
-		bui_draw_bitmap(buffer, BUI_BITMAP_ICON_UP, 0, 0, 3, 14, BUI_BITMAP_ICON_UP.w, BUI_BITMAP_ICON_UP.h);
+		bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_UP, 3, 14);
 	if (focus + 1 != count)
-		bui_draw_bitmap(buffer, BUI_BITMAP_ICON_DOWN, 0, 0, 118, 14, BUI_BITMAP_ICON_DOWN.w, BUI_BITMAP_ICON_DOWN.h);
+		bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_DOWN, 118, 14);
 
 	uint8_t focus_size;
 	int32_t focus_pos;
@@ -123,14 +123,14 @@ void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer) {
 	}
 
 	// Draw focused element
-	menu->elem_draw_callback(menu, focus, buffer, focus_pos);
+	menu->elem_draw_callback(menu, focus, ctx, focus_pos);
 
 	// Draw the visible elements below the focused element
 	{
 		uint8_t target = focus + 1;
 		int32_t target_pos = focus_pos + focus_size;
 		while (target_pos < 32 && target != count) {
-			menu->elem_draw_callback(menu, target, buffer, target_pos);
+			menu->elem_draw_callback(menu, target, ctx, target_pos);
 			target_pos += menu->elem_size_callback(menu, target);
 			target += 1;
 		}
@@ -143,7 +143,7 @@ void bui_menu_draw(const bui_menu_menu_t *menu, bui_bitmap_128x32_t *buffer) {
 		while (target_bottom > 0 && target != 0) {
 			target -= 1;
 			target_bottom -= menu->elem_size_callback(menu, target);
-			menu->elem_draw_callback(menu, target, buffer, target_bottom);
+			menu->elem_draw_callback(menu, target, ctx, target_bottom);
 		}
 	}
 }
