@@ -128,16 +128,16 @@ typedef bool (*bui_room_tick_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, 
 typedef void (*bui_room_button_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, bool left, bool right);
 
 /*
- * Draw the room onto the specified display buffer. This pointer may be a pointer to NVRAM determined at link-time, in
+ * Draw the room onto the specified BUI context. This pointer may be a pointer to NVRAM determined at link-time, in
  * which case it must be passed through PIC(...) to translate it to a valid address at runtime.
  *
  * Args:
  *     ctx: the room context that contains the room
  *     room: the room; this must be a valid pointer at runtime, meaning if it points to NVRAM it must be passed through
  *           PIC(...) if necessary
- *     buffer: the display buffer
+ *     bui_ctx: the BUI context
  */
-typedef void (*bui_room_draw_callback_t)(bui_room_ctx_t *ctx, const bui_room_t *room, bui_bitmap_128x32_t *buffer);
+typedef void (*bui_room_draw_callback_t)(bui_room_ctx_t *ctx, const bui_room_t *room, bui_ctx_t *bui_ctx);
 
 struct bui_room_t {
 	// See type documentation for bui_room_enter_callback_t for more information about how this callback is used. This
@@ -322,8 +322,8 @@ void bui_room_current_button(bui_room_ctx_t *ctx, bool left, bool right);
  *
  * Args:
  *     ctx: the room context
- *     buffer: passed to the callback
+ *     bui_ctx: passed to the callback
  */
-void bui_room_current_draw(bui_room_ctx_t *ctx, bui_bitmap_128x32_t *buffer);
+void bui_room_current_draw(bui_room_ctx_t *ctx, bui_ctx_t *bui_ctx);
 
 #endif

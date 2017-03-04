@@ -151,11 +151,11 @@ void bui_room_current_button(bui_room_ctx_t *ctx, bool left, bool right) {
 	callback(ctx, current, left, right);
 }
 
-void bui_room_current_draw(bui_room_ctx_t *ctx, bui_bitmap_128x32_t *buffer) {
+void bui_room_current_draw(bui_room_ctx_t *ctx, bui_ctx_t *bui_ctx) {
 	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
 	bui_room_draw_callback_t callback = current->draw;
 	if (callback == NULL)
 		return;
 	callback = (bui_room_draw_callback_t) PIC(callback);
-	callback(ctx, current, buffer);
+	callback(ctx, current, bui_ctx);
 }
