@@ -33,17 +33,28 @@ _Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
 #define BUI_VER_MINOR 6
 #define BUI_VER_PATCH 0
 
+// NOTE: The definition of this struct is considered internal; it may be changed between versions without warning.
 typedef struct {
-	// A 2-dimensional bit array (or "bit block") representing the contents of the bitmap. The array is encoded as a
-	// sequence of bits, starting at the most significant bit, which is 128 * 32 bits in length, with big-endian byte
-	// order. Every 128 bits in the sequence is a row, with 32 rows in total. The values of cells in this array (a bit
-	// at a specific row and column) correspond to the colors of the pixels at their respective location, except the
-	// order of rows and columns are both reversed.
+	// The data for the display buffer bitmap (128x32). This is a 2-dimensional bit array (or "bit block") representing
+	// the contents of the bitmap. The array is encoded as a sequence of bits, starting at the most significant bit,
+	// which is 128 * 32 bits in length, with big-endian byte order. Every 128 bits in the sequence is a row, with 32
+	// rows in total. The values of cells in this array (a bit at a specific row and column) correspond to the colors of
+	// the pixels at their respective location, except the order of rows and columns are both reversed.
 	uint8_t bb[512];
-} bui_bitmap_128x32_t;
+	// The x-coordinate of the dirty rectangle of this context; always in [0, 127] if dirty_w and dirty_h != 0
+	uint8_t dirty_x;
+	// The y-coordinate of the dirty rectangle of this context; always in [0, 31] if dirty_w and dirty_h != 0
+	uint8_t dirty_y;
+	// The width of the dirty rectangle of this context; always in [0, 128]
+	uint8_t dirty_w;
+	// The height of the dirty rectangle of this context; always in [0, 32]
+	uint8_t dirty_h;
+} bui_ctx_t;
 
 typedef struct {
+	// The bitmap width in pixels; this must be > 0
 	int16_t w;
+	// The bitmap height in pixels; this must be > 0
 	int16_t h;
 	// A 2-dimensional bit array (or "bit block") representing the contents of the bitmap. The array is encoded as a
 	// sequence of bits, starting at the most significant bit, which is w * h bits in length, with big-endian byte
@@ -54,7 +65,9 @@ typedef struct {
 } bui_bitmap_t;
 
 typedef struct {
+	// The bitmap width in pixels; this must be > 0
 	int16_t w;
+	// The bitmap height in pixels; this must be > 0
 	int16_t h;
 	// A 2-dimensional bit array (or "bit block") representing the contents of the bitmap. The array is encoded as a
 	// sequence of bits, starting at the most significant bit, which is w * h bits in length, with big-endian byte
@@ -211,81 +224,165 @@ BUI_DECLARE_BITMAP(app_settings);
 #undef BUI_DECLARE_BITMAP
 
 /*
- * Send some data contained within the provided display buffer to the MCU to be displayed.
+ * Fill the provided bitmap with the specified color.
  *
  * Args:
- *     buffer: the display buffer to be displayed; pixels with a color index of 1 are displayed as the foreground color,
- *             and pixels with a color index of 0 are displayed as the background color
- *     progress: the progress made displaying this buffer; this should be 0 to start displaying the buffer anew, or a
- *               value previously returned by bui_display(...), but not -1
+ *     bm: the bitmap to be filled
+ *     color: the color with which to fill the bitmap; true fills with 1 bits and false fills with 0 bits
+ */
+void bui_bm_fill(bui_bitmap_t bm, bool color);
+
+/*
+ * Invert every pixel in the provided bitmap.
+ *
+ * Args:
+ *     bitmap: the bitmap to be inverted
+ */
+void bui_bm_invert(bui_bitmap_t bm);
+
+/*
+ * Initialize / reset a BUI context. The context's display buffer is initially filled with the background color.
+ *
+ * Args:
+ *     ctx: the BUI context to be initialized / reset
+ */
+void bui_ctx_init(bui_ctx_t *ctx);
+
+/*
+ * Send some data contained within the provided BUI context's display buffer to the MCU to be displayed, if there is
+ * additional data to be displayed. The data is sent using a Display Status, and as such the MCU must be ready to
+ * receive a Status when calling this function. If bui_ctx_is_displayed(ctx) is true, this function always returns
+ * false and doesn't send anything to the MCU.
+ *
+ * Args:
+ *     ctx: the BUI context
  * Returns:
- *     the progress made displaying the buffer, or -1 if the buffer has been completely displayed
+ *     true if a Display Status was sent to the MCU, false if nothing was sent
  */
-int8_t bui_display(bui_bitmap_128x32_t *buffer, int8_t progress);
+bool bui_ctx_display(bui_ctx_t *ctx);
 
 /*
- * Fill the provided display buffer with the specified color.
+ * Determine whether or not the provided BUI context has been fully displayed.
  *
  * Args:
- *     buffer: the display buffer to be filled
- *     color: the color with which to fill the display buffer; true fills with 1 bits and false fills with 0 bits
+ *     ctx: the BUI context
+ * Returns:
+ *     true if ctx is fully displayed, false otherwise
  */
-void bui_fill(bui_bitmap_128x32_t *buffer, bool color);
+bool bui_ctx_is_displayed(const bui_ctx_t *ctx);
 
 /*
- * Invert every pixel in the provided display buffer.
+ * Fill the provided BUI context's display with the specified color.
  *
  * Args:
- *     buffer: the display buffer to be inverted
+ *     ctx: the BUI context whose display is to be filled
+ *     color: the color with which to fill the display; true fills with the foreground color and false fills with the
+ *            background color
  */
-void bui_invert(bui_bitmap_128x32_t *buffer);
+void bui_ctx_fill(bui_ctx_t *ctx, bool color);
 
 /*
- * Fill a rectangle on the provided display buffer. Any part of the rectangle out of bounds of the display will not be
- * drawn. If the width or height is 0, this function has no side effects.
+ * Fill a rectangle in the provided BUI context's display. Any part of the rectangle out of bounds of the display will
+ * not be filled. If the specified width or height is 0, nothing is drawn.
  *
  * Args:
- *     buffer: the display buffer onto which to draw the rectangle
+ *     ctx: the BUI context onto whose display the rectangle is to be drawn
  *     x: the x-coordinate of top-left corner of the destination rectangle
  *     y: the y-coordinate of top-left corner of the destination rectangle
  *     w: the width of the rectangle; must be >= 0
  *     h: the height of the rectangle; must be >= 0
- *     color: the color with which to fill the rectangle; true fills with 1 bits and false fills with 0 bits
+ *     color: the color with which to fill the rectangle; true fills with the foreground color and false fills with the
+ *            background color
  */
-void bui_fill_rect(bui_bitmap_128x32_t *buffer, int16_t x, int16_t y, int16_t w, int16_t h, bool color);
+void bui_ctx_fill_rect(bui_ctx_t *ctx, int16_t x, int16_t y, int16_t w, int16_t h, bool color);
 
 /*
- * Set the color of a single pixel on the provided display buffer. If the coordinates of the pixel are out of bounds of
- * the display, this function has no side effects.
+ * Set the color of a single pixel in the provided BUI context's display. If the coordinates of the pixel are out of
+ * bounds of the display, nothing is drawn.
  *
  * Args:
- *     buffer: the display buffer whose pixel is to be set
- *     x: the x-coordinate of the pixel to be set
- *     y: the y-coordinate of the pixel to be set
- *     color: the color to which the pixel is to be set; true fills with 1 bits and false fills with 0 bits
+ *     ctx: the BUI context onto whose display the pixel is to be drawn
+ *     x: the x-coordinate of the pixel to be drawn
+ *     y: the y-coordinate of the pixel to be drawn
+ *     color: the color to which the pixel is to be set; true corresponds to the foreground color and false to the
+ *            background color
  */
-void bui_set_pixel(bui_bitmap_128x32_t *buffer, int16_t x, int16_t y, bool color);
+void bui_ctx_draw_pixel(bui_ctx_t *ctx, int16_t x, int16_t y, bool color);
 
 /*
- * Draw a bitmap onto the provided display buffer given a source rectangle on the bitmap's coordinate plane and a
- * destination rectangle on the buffer's coordinate plane. Any part of the destination rectangle out of bounds of the
- * buffer will not be drawn. The source rectangle must be entirely within the source bitmap. If the width or height is
- * 0, this function does not modify the bitmap. Pixels with a color index of 0 in the source bitmap are interpreted as
- * transparent, and pixels with a color index of 1 are written to the destination buffer.
+ * Draw a bitmap onto the provided BUI context's display given a source rectangle on the bitmap's coordinate plane and a
+ * destination rectangle on the display's coordinate plane. Any part of the destination rectangle out of bounds of the
+ * display will not be drawn. The source rectangle must be entirely within the source bitmap. If the width or height is
+ * 0, nothing is drawn. Pixels with a color index of 0 in the source bitmap are drawn as the background color, and
+ * pixels with a color index of 1 are drawn as the foreground color.
  *
  * Args:
- *     buffer: the display buffer onto which to draw the bitmap
- *     bitmap: the bitmap to be drawn onto buffer
+ *     ctx: the BUI context onto whose display the bitmap is to be drawn
+ *     bm: the bitmap to be drawn onto ctx's display
  *     src_x: the x-coordinate of the top-left corner of the source rectangle on or outside of bitmap's coordinate plane
  *     src_y: the y-coordinate of the top-left corner of the source rectangle on or outside of bitmap's coordinate plane
- *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of buffer's coordinate
- *             plane
- *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of buffer's coordinate
- *             plane
+ *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
  *     w: the width of the source and destination rectangles; must be >= 0
  *     h: the height of the source and destination rectangles; must be >= 0
  */
-void bui_draw_bitmap(bui_bitmap_128x32_t *buffer, bui_const_bitmap_t bitmap, int16_t src_x, int16_t src_y,
-		int16_t dest_x, int16_t dest_y, int16_t w, int16_t h);
+void bui_ctx_draw_bitmap(bui_ctx_t *ctx, bui_const_bitmap_t bm, int16_t src_x, int16_t src_y, int16_t dest_x,
+		int16_t dest_y, int16_t w, int16_t h);
+
+/*
+ * Draw an entire bitmap onto the provided BUI context's display given a destination rectangle on the display's
+ * coordinate plane. Any part of the destination rectangle out of bounds of the display will not be drawn. Pixels with a
+ * color index of 0 in the source bitmap are drawn as the background color, and pixels with a color index of 1 are drawn
+ * as the foreground color.
+ *
+ * Args:
+ *     ctx: the BUI context onto whose display the bitmap is to be drawn
+ *     bm: the bitmap to be drawn onto ctx's display
+ *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ */
+void bui_ctx_draw_bitmap_full(bui_ctx_t *ctx, bui_const_bitmap_t bm, int16_t dest_x, int16_t dest_y);
+
+/*
+ * Draw a masked bitmap onto the provided BUI context's display given a source rectangle on the bitmap's coordinate
+ * plane and a destination rectangle on the display's coordinate plane. Any part of the destination rectangle out of
+ * bounds of the display will not be drawn. The source rectangle must be entirely within the source bitmap. If the width
+ * or height is 0, nothing is drawn. Pixels with a color index of 0 in the source bitmap are interpreted as transparent,
+ * and pixels with a color index of 1 are drawn as the foreground color.
+ *
+ * Args:
+ *     ctx: the BUI context onto whose display the bitmap is to be drawn
+ *     bm: the bitmap to be drawn onto ctx's display
+ *     src_x: the x-coordinate of the top-left corner of the source rectangle on or outside of bitmap's coordinate plane
+ *     src_y: the y-coordinate of the top-left corner of the source rectangle on or outside of bitmap's coordinate plane
+ *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ *     w: the width of the source and destination rectangles; must be >= 0
+ *     h: the height of the source and destination rectangles; must be >= 0
+ */
+void bui_ctx_draw_mbitmap(bui_ctx_t *ctx, bui_const_bitmap_t bm, int16_t src_x, int16_t src_y, int16_t dest_x,
+		int16_t dest_y, int16_t w, int16_t h);
+
+/*
+ * Draw an entire masked bitmap onto the provided BUI context's display given a destination rectangle on the display's
+ * coordinate plane. Any part of the destination rectangle out of bounds of the display will not be drawn. Pixels with a
+ * color index of 0 in the source bitmap are interpreted as transparent, and pixels with a color index of 1 are drawn as
+ * the foreground color.
+ *
+ * Args:
+ *     ctx: the BUI context onto whose display the bitmap is to be drawn
+ *     bm: the bitmap to be drawn onto ctx's display
+ *     dest_x: the x-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ *     dest_y: the y-coordinate of the top-left corner of the destination rectangle on or outside of ctx's display's
+ *             coordinate plane
+ */
+void bui_ctx_draw_mbitmap_full(bui_ctx_t *ctx, bui_const_bitmap_t bm, int16_t dest_x, int16_t dest_y);
 
 #endif
