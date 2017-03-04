@@ -1,4 +1,4 @@
-# BOLOS User Interface Library v0.5.0
+# BOLOS User Interface Library v0.6.0
 
 [This repository](https://github.com/parkerhoyes/bolos-user-interface) contains
 a user interface library for
@@ -15,20 +15,25 @@ greater control over the rendering process.
 In order to do this, the meat of the library is a
 [blitting](https://en.wikipedia.org/wiki/Bit_blit) API which allows the
 application to be rendered onto a display buffer stored on the SE before being
-sent to the MCU to be displayed. When the application is ready to display the
-frame, `bui_display(...)` is used to convert the buffer into the format used by
-the MCU and send it. Storing the display buffer on the SE greatly simplifies the
-rendering process for applications with complicated interfaces because rendering
-can be done without having to communicate with the MCU.
+sent to the MCU to be displayed. The display buffer is stored within the BUI
+context, of type `bui_ctx_t`, which also stores information about what parts of
+the buffer need to be sent to the MCU. In order to display the data stored
+within the BUI context, `bui_ctx_display(...)` is used. Storing the display
+buffer on the SE greatly simplifies the rendering process for applications with
+complicated interfaces because rendering can be done without having to
+communicate with the MCU.
 
 The library's API is thoroughly documented in its header files. In order to
 include this library in your project, simply include the files under the
 `include/` directory and link to the source files in `src/`.
 
+The release notes and changelog for this library is maintained [on
+GitHub](https://github.com/parkerhoyes/bolos-user-interface/releases).
+
 ## Modules
 
 Aside from the core of the library in `src/bui.c` and `include/bui.h`, there are
-also two major modules of BUI that contain more specific display and user
+also three major modules of BUI that contain more specific display and user
 interface related utilities.
 
 ### Font Module
@@ -56,9 +61,8 @@ module](https://github.com/parkerhoyes/nanos-app-menudemo).
 The menu module (which defines all symbols with the prefix `bui_menu_`)
 implements a "scrollable" list of display components. The menu supports optional
 smooth scrolling animations (it uses an exponential curve to animate the
-scroll). Elements may be either 128x12 or 128x32 pixels in size. When
-initializing the menu, a callback is provided which is used to render the menu's
-elements. I have created a [demo of the menu
+scroll). When initializing the menu, a callback is provided which is used to
+render the menu's elements. I have created a [demo of the menu
 module](https://github.com/parkerhoyes/nanos-app-menudemo) which is a good
 starting point to learn how to use it in your project.
 
@@ -83,6 +87,9 @@ This repository will follow a Git branching model similar to that described in
 model*](http://nvie.com/posts/a-successful-git-branching-model/) and a
 versioning scheme similar to that defined by [Semantic Versioning
 2.0.0](http://semver.org/).
+
+The release notes and changelog for this library is maintained [on
+GitHub](https://github.com/parkerhoyes/bolos-user-interface/releases).
 
 ## License
 
