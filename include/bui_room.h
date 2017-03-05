@@ -107,11 +107,8 @@ typedef void (*bui_room_exit_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, 
  *           PIC(...) if necessary
  *     elapsed: the amount of time elapsed since this callback was last called or since the room was entered into,
  *              whichever came last; this may not be 0
- * Returns:
- *     true if the appearance of the room may have changed between now and the last time this callback was called or the
- *     room was entered into, whichever came last, or false otherwise
  */
-typedef bool (*bui_room_tick_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, uint32_t elapsed);
+typedef void (*bui_room_tick_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, uint32_t elapsed);
 
 /*
  * Indicate to the room that a button press occurred. Both left and right may be true (if both were pressed at the same
@@ -147,7 +144,7 @@ struct bui_room_t {
 	// may also be NULL, to perform no action.
 	bui_room_exit_callback_t exit;
 	// See type documentation for bui_room_tick_callback_t for more information about how this callback is used. This
-	// may also be NULL, to perform no action and assume a return value of false.
+	// may also be NULL, to perform no action.
 	bui_room_tick_callback_t tick;
 	// See type documentation for bui_room_button_callback_t for more information about how this callback is used. This
 	// may also be NULL, to perform no action.
@@ -295,15 +292,13 @@ void bui_room_current_exit(bui_room_ctx_t *ctx, bool up);
 
 /*
  * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "tick"
- * callback, unless it is NULL, in which case false is returned.
+ * callback, unless it is NULL.
  *
  * Args:
  *     ctx: the room context
  *     elapsed: passed to the callback
- * Returns:
- *     the value that the callback returns, or false if the callback is NULL
  */
-bool bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed);
+void bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed);
 
 /*
  * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "button"

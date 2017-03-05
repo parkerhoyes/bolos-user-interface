@@ -136,13 +136,13 @@ void bui_room_current_exit(bui_room_ctx_t *ctx, bool up) {
 	callback(ctx, current, up);
 }
 
-bool bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed) {
+void bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed) {
 	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
 	bui_room_tick_callback_t callback = current->tick;
 	if (callback == NULL)
-		return false;
+		return;
 	callback = (bui_room_tick_callback_t) PIC(callback);
-	return callback(ctx, current, elapsed);
+	callback(ctx, current, elapsed);
 }
 
 void bui_room_current_button(bui_room_ctx_t *ctx, bool left, bool right) {
