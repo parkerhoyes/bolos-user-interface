@@ -377,7 +377,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx) {
 			}
 			if (righti + i == layout_size) {
 				// Draw backspace key
-				bui_ctx_draw_bitmap(ctx, BUI_BITMAP_ICON_LEFT_FILLED, x + 1, y);
+				bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_LEFT_FILLED, x + 1, y);
 			} else {
 				// Draw normal key
 				bui_bkb_draw_key(ctx, layout[righti + i], x, y);

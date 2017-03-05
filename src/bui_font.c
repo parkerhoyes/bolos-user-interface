@@ -37,38 +37,38 @@ typedef struct __attribute__((packed)) {
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
 typedef struct __attribute__((packed)) {
-	bui_font_info_t info;
 	const bui_font_char_t *chars;
 	const uint8_t *bitmaps; // Array of bitmaps for all characters
+	bui_font_info_t info;
 } bui_font_data_t;
 
 #include "bui_font_fonts.inc"
 
 const bui_font_id_t bui_font_null = NULL;
 
-#define bui_font_for_id(id) ((const bui_font_t*) PIC(id))
+#define BUI_FONT_DATA_FOR_ID(id) ((const bui_font_data_t*) PIC(id))
 
 const bui_font_info_t* bui_font_get_font_info(bui_font_id_t font_id) {
-	return &bui_font_for_id(font_id)->info;
+	return &BUI_FONT_DATA_FOR_ID(font_id)->info;
 }
 
 uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch) {
-	const bui_font_data_t *font_data = &bui_font_for_id(font_id)->data;
+	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font_id);
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
-	chari -= font_data->first_char;
+	chari -= font_data->info.first_char;
 	return ((const bui_font_char_t*) PIC(font_data->chars))[chari].char_width;
 }
 
 const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest) {
-	const bui_font_data_t *font_data = &bui_font_for_id(font_id)->data;
+	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font_id);
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
-	chari -= font_data->first_char;
+	chari -= font_data->info.first_char;
 	bui_font_char_t font_char;
-	os_memcpy(font_char, &((const bui_font_char_t*) PIC(font_data->chars))[chari], sizeof(bui_font_char_t));
+	os_memcpy(&font_char, &((const bui_font_char_t*) PIC(font_data->chars))[chari], sizeof(bui_font_char_t));
 	if (w_dest != NULL)
 		*w_dest = font_char.char_width;
 	return (const uint8_t*) PIC(font_data->bitmaps) + font_char.bitmap_offset;

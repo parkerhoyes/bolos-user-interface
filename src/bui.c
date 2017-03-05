@@ -123,49 +123,6 @@ static inline void bui_bitblit_or(const uint8_t *src, uint8_t src_o, uint8_t *de
 }
 
 /*
- * Perform a bitwise AND with a sequence of bits from one location to another. The source and destination sequences may
- * not be overlapping. No bytes that do not contain bits in either of the source or destination sequences are accessed.
- *
- * Args:
- *     src: the pointer to the byte containing the first bit in the source sequence
- *     src_o: the index of the first bit in the source sequence in its byte (0 for most significant bit, 7 for least);
- *            must be <= 7
- *     dest: the pointer to the byte containing the first bit in the destination sequence
- *     dest_o: the index of the first bit in the destination sequence in its byte (0 for most significant bit, 7 for
- *             least); must be <= 7
- *     n: the number of bits to AND; also the number of bits in each of the source and destination sequences
- */
-static inline void bui_bitblit_and(const uint8_t *src, uint8_t src_o, uint8_t *dest, uint8_t dest_o, uint32_t n) {
-	while (true) {
-		if (n >= 8) {
-			uint8_t bits = src[0] << src_o;
-			if (src_o != 0)
-				bits |= src[1] >> (8 - src_o);
-			dest[0] &= (bits >> dest_o) | ~(0xFF >> dest_o);
-			if (dest_o != 0) {
-				dest[1] &= (bits << (8 - dest_o)) | (0xFF >> dest_o);
-			}
-			src++;
-			dest++;
-			n -= 8;
-		} else if (n == 0) {
-			break;
-		} else { // n is in [1, 7]
-			uint8_t bits = src[0] << src_o;
-			if (8 - src_o < n)
-				bits |= src[1] >> (8 - src_o);
-			bits &= ~(0xFF >> n);
-			uint8_t mask = ~(0xFF >> n);
-			dest[0] &= (bits >> dest_o) | ~(mask >> dest_o);
-			if (8 - dest_o < n) {
-				dest[1] &= (bits << (8 - dest_o)) | ~(mask << (8 - dest_o));
-			}
-			break;
-		}
-	}
-}
-
-/*
  * Reverse the bytes in a byte buffer.
  *
  * Args:
@@ -174,7 +131,7 @@ static inline void bui_bitblit_and(const uint8_t *src, uint8_t src_o, uint8_t *d
  */
 static inline void bui_reverse_bytes(uint8_t *buffer, uint32_t size) {
 	// Integer underflow on j is anticipated and acceptable
-	for (uint32_t i = 0, j = size - 1; i < size; i++, j--) {
+	for (uint32_t i = 0, j = size - 1; i < size / 2; i++, j--) {
 		uint8_t temp = buffer[i];
 		buffer[i] = buffer[j];
 		buffer[j] = temp;
@@ -266,12 +223,12 @@ bool bui_ctx_display(bui_ctx_t *ctx) {
 	uint8_t sub_w = ctx->dirty_w;
 	uint8_t sub_h = ctx->dirty_h;
 	// Constrain the bounds of the subrectangle of the dirty rectangle such that it fits in 64 bytes
-	uint8_t size;
+	uint16_t size;
 	if (sub_w > sub_h) {
-		while ((size = (sub_w * sub_h + 7) / 8) > 64)
+		while ((size = ((uint16_t) sub_w * sub_h + 7) / 8) > 64)
 			sub_w -= 1;
 	} else {
-		while ((size = (sub_w * sub_h + 7) / 8) > 64)
+		while ((size = ((uint16_t) sub_w * sub_h + 7) / 8) > 64)
 			sub_h -= 1;
 	}
 	// Encode the subrectangle for transport
@@ -284,6 +241,7 @@ bool bui_ctx_display(bui_ctx_t *ctx) {
 		uint16_t dest_i = sub_w * i;
 		bui_bitblit_or(&ctx->bb[src_i / 8], src_i % 8, &sub[dest_i / 8], dest_i % 8, sub_w);
 	}
+	bui_reverse_bytes(sub, size);
 	// Display the subrectangle
 	unsigned int color_index[] = {0x00000000, 0x00FFFFFF};
 	io_seproxyhal_display_bitmap(ctx->dirty_x, ctx->dirty_y, sub_w, sub_h, color_index, 1, sub);

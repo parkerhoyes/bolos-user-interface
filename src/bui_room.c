@@ -40,7 +40,7 @@ _Static_assert(sizeof(uint16_t) == 2, "sizeof(uint16_t) must be 2");
 void bui_room_ctx_init(bui_room_ctx_t *ctx, void *stack, const bui_room_t *room, const void *args, uint16_t args_size) {
 	stack = (uint8_t*) stack + BUI_ROOM_PAD(stack);
 	*((const bui_room_t**) stack) = (const bui_room_t*) PIC(room);
-	stack = (uint8_t*) stack + sizeof(const bui_room_t*);
+	stack = (const bui_room_t**) stack + 1;
 	ctx->stack_ptr = stack;
 	ctx->frame_ptr = stack;
 	if (args_size != 0)
@@ -53,10 +53,13 @@ void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *arg
 	uint8_t pad = BUI_ROOM_PAD(ctx->stack_ptr + 3);
 	uint16_t frame_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + pad;
-	*((uint8_t*) ctx->stack_ptr)++ = pad;
-	*((uint16_t*) ctx->stack_ptr)++ = frame_size;
+	*((uint8_t*) ctx->stack_ptr) = pad;
+	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + 1;
+	*((uint16_t*) ctx->stack_ptr) = frame_size;
+	ctx->stack_ptr = (uint16_t*) ctx->stack_ptr + 1;
 	room = (const bui_room_t*) PIC(room);
-	*((const bui_room_t**) ctx->stack_ptr)++ = room;
+	*((const bui_room_t**) ctx->stack_ptr) = room;
+	ctx->stack_ptr = (const bui_room_t**) ctx->stack_ptr + 1;
 	ctx->frame_ptr = ctx->stack_ptr;
 	if (args_size != 0)
 		bui_room_push(ctx, args, args_size);
