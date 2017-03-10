@@ -35,6 +35,7 @@
 #define NTH_BIT(n, i) (((n) >> (7 - (i))) & 1) // Only to be used with uint8_t
 
 #define KEYS_ANIMATION_LEN 360 // The duration of the keys animation, in milliseconds
+#define TYPED_ANIMATION_LEN 200 // The duration of the typed animation, in milliseconds
 #define CURSOR_ANIMATION_INT 1000 // Half the period of the cursor blink animation, in milliseconds
 
 static const uint8_t bui_bkb_bitmap_ellipsis_bitmap[] = {
@@ -142,6 +143,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
 	bkb->bits_typed_size = 0;
 	bkb->option = '\0';
 	bkb->keys_tick = animations ? KEYS_ANIMATION_LEN : 0x01FF;
+	bkb->typed_tick = TYPED_ANIMATION_LEN;
 	bkb->cursor_tick = 0;
 }
 
@@ -200,8 +202,10 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 		bkb->bits_typed_size = 0;
 		if (charsi == layout_size) { // If backspace key was chosen
 			bkb->type_buff_size -= 1;
-			if (bkb->keys_tick != 0x01FF)
+			if (bkb->keys_tick != 0x01FF) {
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
+				bkb->typed_tick = TYPED_ANIMATION_LEN; // Finish animation
+			}
 			return 0x2FF;
 		}
 		char ch = layout[charsi];
@@ -225,8 +229,11 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 		default:
 			bkb->type_buff[bkb->type_buff_size++] = ch;
 			bkb->option = '\0';
-			if (bkb->keys_tick != 0x01FF)
+			if (bkb->keys_tick != 0x01FF) {
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
+				bkb->typed_tick = 0; // Start animation
+				bkb->typed_src = side == BUI_DIR_LEFT ? false : true;
+			}
 			return ch;
 		}
 	}
@@ -245,6 +252,13 @@ bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
 			bkb->keys_tick = KEYS_ANIMATION_LEN;
 		else
 			bkb->keys_tick += elapsed;
+		change = true;
+	}
+	if (bkb->typed_tick < TYPED_ANIMATION_LEN) {
+		if (elapsed >= TYPED_ANIMATION_LEN - bkb->typed_tick)
+			bkb->typed_tick = TYPED_ANIMATION_LEN;
+		else
+			bkb->typed_tick += elapsed;
 		change = true;
 	}
 	uint16_t cursor_tick = bkb->cursor_tick;
@@ -283,9 +297,17 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx) {
 	for (uint8_t i = 0; i <= textbox_cursor_i; i++) {
 		if (i == 0 && textbox_ellipsis) {
 			bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_ELLIPSIS, textbox_x, 22);
-		} else if (i < textbox_cursor_i) {
+		} else if ((bkb->typed_tick == TYPED_ANIMATION_LEN ? i : i + 1) < textbox_cursor_i) {
 			bui_font_draw_char(ctx, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
 					bui_font_lucida_console_8);
+		} else if (i + 1 == textbox_cursor_i) {
+			uint8_t from_x = bkb->typed_src ? 74 : 1;
+			uint8_t from_y = 0;
+			int16_t delta_x = textbox_x + i * 6 - from_x;
+			int16_t delta_y = 22 - from_y;
+			uint8_t x = from_x + delta_x * bkb->typed_tick / TYPED_ANIMATION_LEN;
+			uint8_t y = from_y + delta_y * bkb->typed_tick / TYPED_ANIMATION_LEN;
+			bui_font_draw_char(ctx, bkb->type_buff[textbox_i + i], x, y, BUI_DIR_LEFT_TOP, bui_font_lucida_console_8);
 		} else { // i == textbox_cursor_i
 			if (bkb->keys_tick == 0x01FF || bkb->cursor_tick < 1000)
 				bui_ctx_fill_rect(ctx, textbox_x + textbox_cursor_i * 6 + 2, 22, 1, 7, true); // Draw cursor

@@ -39,6 +39,10 @@ typedef struct {
 	char *type_buff; // The buffer that stores the characters that the user has typed
 	uint16_t keys_tick : 9; // The animation ticker for key animations, in milliseconds; 0x01FF is no animations,
 	                        // KEYS_ANIMATION_LEN is done
+	uint16_t typed_tick : 9; // The animation ticker for the "key typed" animation, in milliseconds; TYPED_ANIMATION_LEN
+	                         // if done, textbox is empty, or animations are disabled
+	bool typed_src : 1; // false indicates the source location for the "key typed" animation is the left side, true
+	                    // corresponds to the right side
 	uint16_t cursor_tick : 11; // The animation ticker for the cursor blink animation, in milliseconds
 	char layout[35]; // The buffer that stores the possible "keys" the user may choose from (the order matters)
 	uint8_t layout_size; // The number of "keys" in layout
