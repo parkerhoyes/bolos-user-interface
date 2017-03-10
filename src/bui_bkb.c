@@ -50,10 +50,16 @@ static const uint8_t bui_bkb_bitmap_space_bitmap[] = {
 #define BUI_BKB_BITMAP_SPACE ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_space_bitmap })
 
 static const uint8_t bui_bkb_bitmap_toggle_case_bitmap[] = {
-	0x03, 0xA2, 0x38, 0xE2, 0x2E,
+	0x00, 0x23, 0x98, 0xDE, 0x71,
 };
 
 #define BUI_BKB_BITMAP_TOGGLE_CASE ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_toggle_case_bitmap })
+
+static const uint8_t bui_bkb_bitmap_backspace_bitmap[] = {
+	0x00, 0x03, 0xE5, 0x6D, 0xF5, 0xBE, 0x00,
+};
+
+#define BUI_BKB_BITMAP_BACKSPACE ((bui_const_bitmap_t) { .w = 7, .h = 8, .bb = bui_bkb_bitmap_backspace_bitmap })
 
 const char bui_bkb_layout_alphabetic[26] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
@@ -377,7 +383,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx) {
 			}
 			if (righti + i == layout_size) {
 				// Draw backspace key
-				bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_LEFT_FILLED, x + 1, y);
+				bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_BACKSPACE, x, y);
 			} else {
 				// Draw normal key
 				bui_bkb_draw_key(ctx, layout[righti + i], x, y);
@@ -385,7 +391,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx) {
 		}
 	} else {
 		// Draw backspace key
-		bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_LEFT_FILLED, 1, 0);
+		bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_BACKSPACE, 0, 0);
 	}
 }
 
