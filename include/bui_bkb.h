@@ -36,17 +36,21 @@
 // NOTE: The definition of this struct is considered internal. It may be changed between versions without warning, and
 // the struct's data should never be modified by code external to this module (bui_bkb).
 typedef struct {
+	char *type_buff; // The buffer that stores the characters that the user has typed
+	uint16_t keys_tick : 9; // The animation ticker for key animations, in milliseconds; 0x01FF is no animations,
+	                        // KEYS_ANIMATION_LEN is done
+	uint16_t typed_tick : 9; // The animation ticker for the "key typed" animation, in milliseconds; TYPED_ANIMATION_LEN
+	                         // if done, textbox is empty, or animations are disabled
+	bool typed_src : 1; // false indicates the source location for the "key typed" animation is the left side, true
+	                    // corresponds to the right side
+	uint16_t cursor_tick : 11; // The animation ticker for the cursor blink animation, in milliseconds
 	char layout[35]; // The buffer that stores the possible "keys" the user may choose from (the order matters)
 	uint8_t layout_size; // The number of "keys" in layout
-	char *type_buff; // The buffer that stores the characters that the user has typed
 	uint8_t type_buff_size; // The number of characters in type_buff
 	uint8_t type_buff_cap; // The maximum capacity of type_buff (in bytes)
 	uint8_t bits_typed; // The sequence of "bits" inputted by the user, starting at the MSB (0 is left, 1 is right)
 	uint8_t bits_typed_size; // The number of "bits" inputted by the user (the number of left / right choices)
 	char option; // Specifies the active sub-menu for a particular set of characters; '\0' is none
-	uint16_t keys_tick : 9; // The animation ticker for key animations, in milliseconds; 0x01FF is no animations,
-	                        // KEYS_ANIMATION_LEN is done
-	uint16_t cursor_tick : 11; // The animation ticker for the cursor blink animation, in milliseconds
 } bui_bkb_bkb_t;
 
 extern const char bui_bkb_layout_alphabetic[26];
@@ -106,16 +110,16 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
 bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed);
 
 /*
- * Draw the specified keyboard onto the specified display buffer.
+ * Draw the specified keyboard in the specified BUI context.
  *
  * Args:
  *     bkb: the keyboard to be drawn
- *     buffer: the display buffer onto which the keyboard is to be drawn
+ *     ctx: the BUI context in which the keyboard is to be drawn
  */
-void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer);
+void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx);
 
 /*
- *
+ * Set the type buffer for the specified keyboard.
  *
  * Args:
  *     bkb: the keyboard

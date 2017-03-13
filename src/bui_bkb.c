@@ -35,6 +35,7 @@
 #define NTH_BIT(n, i) (((n) >> (7 - (i))) & 1) // Only to be used with uint8_t
 
 #define KEYS_ANIMATION_LEN 360 // The duration of the keys animation, in milliseconds
+#define TYPED_ANIMATION_LEN 200 // The duration of the typed animation, in milliseconds
 #define CURSOR_ANIMATION_INT 1000 // Half the period of the cursor blink animation, in milliseconds
 
 static const uint8_t bui_bkb_bitmap_ellipsis_bitmap[] = {
@@ -50,10 +51,16 @@ static const uint8_t bui_bkb_bitmap_space_bitmap[] = {
 #define BUI_BKB_BITMAP_SPACE ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_space_bitmap })
 
 static const uint8_t bui_bkb_bitmap_toggle_case_bitmap[] = {
-	0x03, 0xA2, 0x38, 0xE2, 0x2E,
+	0x00, 0x23, 0x98, 0xDE, 0x71,
 };
 
 #define BUI_BKB_BITMAP_TOGGLE_CASE ((bui_const_bitmap_t) { .w = 5, .h = 8, .bb = bui_bkb_bitmap_toggle_case_bitmap })
+
+static const uint8_t bui_bkb_bitmap_backspace_bitmap[] = {
+	0x00, 0x03, 0xE5, 0x6D, 0xF5, 0xBE, 0x00,
+};
+
+#define BUI_BKB_BITMAP_BACKSPACE ((bui_const_bitmap_t) { .w = 7, .h = 8, .bb = bui_bkb_bitmap_backspace_bitmap })
 
 const char bui_bkb_layout_alphabetic[26] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
@@ -100,13 +107,13 @@ static void bui_bkb_toggle_case(char *str, uint8_t n) {
  * Draw a key onto the keyboard at the specified position.
  *
  * Args:
- *     buffer: the display buffer
+ *     ctx: the BUI context
  *     key: the key to be drawn; may be a character displayable in bui_font_lucida_console_8, or an option key; the only
  *          whitespace character allowed is a space
  *     x: the x-coordinate of the top-left corner of the destination
  *     y: the y-coordinate of the top-left corner of the destination
  */
-static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int16_t x, int16_t y) {
+static void bui_bkb_draw_key(bui_ctx_t *ctx, char key, int16_t x, int16_t y) {
 	switch (key) {
 	case BUI_BKB_OPTION_NUMERICS:
 		key = '#';
@@ -115,14 +122,13 @@ static void bui_bkb_draw_key(bui_bitmap_128x32_t *buffer, char key, int16_t x, i
 		key = '@';
 		break;
 	case BUI_BKB_OPTION_TOGGLE_CASE:
-		bui_draw_bitmap(buffer, BUI_BKB_BITMAP_TOGGLE_CASE, 0, 0, x, y, BUI_BKB_BITMAP_TOGGLE_CASE.w,
-				BUI_BKB_BITMAP_TOGGLE_CASE.h);
+		bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_TOGGLE_CASE, x, y);
 		return;
 	case ' ':
-		bui_draw_bitmap(buffer, BUI_BKB_BITMAP_SPACE, 0, 0, x, y, BUI_BKB_BITMAP_SPACE.w, BUI_BKB_BITMAP_SPACE.h);
+		bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_SPACE, x, y);
 		return;
 	}
-	bui_font_draw_char(buffer, key, x, y, BUI_DIR_LEFT_TOP, bui_font_lucida_console_8);
+	bui_font_draw_char(ctx, key, x, y, BUI_DIR_LEFT_TOP, bui_font_lucida_console_8);
 }
 
 void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, char *type_buff, uint8_t type_buff_size,
@@ -137,6 +143,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
 	bkb->bits_typed_size = 0;
 	bkb->option = '\0';
 	bkb->keys_tick = animations ? KEYS_ANIMATION_LEN : 0x01FF;
+	bkb->typed_tick = TYPED_ANIMATION_LEN;
 	bkb->cursor_tick = 0;
 }
 
@@ -195,8 +202,10 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 		bkb->bits_typed_size = 0;
 		if (charsi == layout_size) { // If backspace key was chosen
 			bkb->type_buff_size -= 1;
-			if (bkb->keys_tick != 0x01FF)
+			if (bkb->keys_tick != 0x01FF) {
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
+				bkb->typed_tick = TYPED_ANIMATION_LEN; // Finish animation
+			}
 			return 0x2FF;
 		}
 		char ch = layout[charsi];
@@ -220,8 +229,11 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
 		default:
 			bkb->type_buff[bkb->type_buff_size++] = ch;
 			bkb->option = '\0';
-			if (bkb->keys_tick != 0x01FF)
+			if (bkb->keys_tick != 0x01FF) {
 				bkb->keys_tick = KEYS_ANIMATION_LEN; // Finish animation
+				bkb->typed_tick = 0; // Start animation
+				bkb->typed_src = side == BUI_DIR_LEFT ? false : true;
+			}
 			return ch;
 		}
 	}
@@ -242,6 +254,13 @@ bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
 			bkb->keys_tick += elapsed;
 		change = true;
 	}
+	if (bkb->typed_tick < TYPED_ANIMATION_LEN) {
+		if (elapsed >= TYPED_ANIMATION_LEN - bkb->typed_tick)
+			bkb->typed_tick = TYPED_ANIMATION_LEN;
+		else
+			bkb->typed_tick += elapsed;
+		change = true;
+	}
 	uint16_t cursor_tick = bkb->cursor_tick;
 	bool last_cursor = cursor_tick < CURSOR_ANIMATION_INT;
 	cursor_tick += elapsed % (CURSOR_ANIMATION_INT * 2);
@@ -252,7 +271,7 @@ bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed) {
 	return change;
 }
 
-void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
+void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx) {
 	// Locate textbox
 	uint8_t textbox_size = bkb->type_buff_cap + 1; // The number of slots in the textbox
 	if (textbox_size > 20)
@@ -271,26 +290,33 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 
 	// Draw textbox slots
 	for (uint8_t i = 0; i < textbox_size; i++) {
-		bui_fill_rect(buffer, textbox_x + i * 6, 31, 5, 1, true);
+		bui_ctx_fill_rect(ctx, textbox_x + i * 6, 31, 5, 1, true);
 	}
 
 	// Draw textbox contents
 	for (uint8_t i = 0; i <= textbox_cursor_i; i++) {
 		if (i == 0 && textbox_ellipsis) {
-			bui_draw_bitmap(buffer, BUI_BKB_BITMAP_ELLIPSIS, 0, 0, textbox_x, 22, BUI_BKB_BITMAP_ELLIPSIS.w,
-					BUI_BKB_BITMAP_ELLIPSIS.h);
-		} else if (i < textbox_cursor_i) {
-			bui_font_draw_char(buffer, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
+			bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_ELLIPSIS, textbox_x, 22);
+		} else if ((bkb->typed_tick == TYPED_ANIMATION_LEN ? i : i + 1) < textbox_cursor_i) {
+			bui_font_draw_char(ctx, bkb->type_buff[textbox_i + i], textbox_x + i * 6, 22, BUI_DIR_LEFT_TOP,
 					bui_font_lucida_console_8);
+		} else if (i + 1 == textbox_cursor_i) {
+			uint8_t from_x = bkb->typed_src ? 74 : 1;
+			uint8_t from_y = 0;
+			int16_t delta_x = textbox_x + i * 6 - from_x;
+			int16_t delta_y = 22 - from_y;
+			uint8_t x = from_x + delta_x * bkb->typed_tick / TYPED_ANIMATION_LEN;
+			uint8_t y = from_y + delta_y * bkb->typed_tick / TYPED_ANIMATION_LEN;
+			bui_font_draw_char(ctx, bkb->type_buff[textbox_i + i], x, y, BUI_DIR_LEFT_TOP, bui_font_lucida_console_8);
 		} else { // i == textbox_cursor_i
 			if (bkb->keys_tick == 0x01FF || bkb->cursor_tick < 1000)
-				bui_fill_rect(buffer, textbox_x + textbox_cursor_i * 6 + 2, 22, 1, 7, true); // Draw cursor
+				bui_ctx_fill_rect(ctx, textbox_x + textbox_cursor_i * 6 + 2, 22, 1, 7, true); // Draw cursor
 		}
 	}
 
 	// Draw center arrow icons
-	bui_draw_bitmap(buffer, BUI_BITMAP_ICON_LEFT, 0, 0, 58, 5, BUI_BITMAP_ICON_LEFT.w, BUI_BITMAP_ICON_LEFT.h);
-	bui_draw_bitmap(buffer, BUI_BITMAP_ICON_RIGHT, 0, 0, 66, 5, BUI_BITMAP_ICON_RIGHT.w, BUI_BITMAP_ICON_RIGHT.h);
+	bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_LEFT, 58, 5);
+	bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_RIGHT, 66, 5);
 
 	// Draw keyboard "keys"
 	if (bkb->type_buff_size != bkb->type_buff_cap) { // If the textbox is not full
@@ -355,7 +381,7 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 				x = (int) prev_x + ((int) x - (int) prev_x) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 				y = (int) prev_y + ((int) y - (int) prev_y) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 			}
-			bui_bkb_draw_key(buffer, layout[lefti + i], x, y);
+			bui_bkb_draw_key(ctx, layout[lefti + i], x, y);
 		}
 
 		// Draw keys on right side
@@ -379,17 +405,15 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_bitmap_128x32_t *buffer) {
 			}
 			if (righti + i == layout_size) {
 				// Draw backspace key
-				bui_draw_bitmap(buffer, BUI_BITMAP_ICON_LEFT_FILLED, 0, 0, x + 1, y, BUI_BITMAP_ICON_LEFT_FILLED.w,
-						BUI_BITMAP_ICON_LEFT_FILLED.h);
+				bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_BACKSPACE, x, y);
 			} else {
 				// Draw normal key
-				bui_bkb_draw_key(buffer, layout[righti + i], x, y);
+				bui_bkb_draw_key(ctx, layout[righti + i], x, y);
 			}
 		}
 	} else {
 		// Draw backspace key
-		bui_draw_bitmap(buffer, BUI_BITMAP_ICON_LEFT_FILLED, 0, 0, 1, 0, BUI_BITMAP_ICON_LEFT_FILLED.w,
-				BUI_BITMAP_ICON_LEFT_FILLED.h);
+		bui_ctx_draw_mbitmap_full(ctx, BUI_BKB_BITMAP_BACKSPACE, 0, 0);
 	}
 }
 

@@ -30,60 +30,51 @@
 
 #include "bui.h"
 
-typedef struct {
-	uint8_t char_width; // Character width, in pixels
+typedef struct __attribute__((packed)) {
 	uint16_t bitmap_offset; // The starting index of the character's bitmap in the font bitmap
+	uint8_t char_width; // Character width, in pixels
 } bui_font_char_t;
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
-typedef struct {
-	uint8_t char_height;
-	uint8_t baseline_height;
-	uint8_t char_kerning;
-	uint8_t first_char; // Character code of the first character in the font bitmap
-	uint8_t last_char; // Character code of the last character in the font bitmap
+typedef struct __attribute__((packed)) {
 	const bui_font_char_t *chars;
 	const uint8_t *bitmaps; // Array of bitmaps for all characters
-} bui_font_data_t;
-
-typedef union {
-	bui_font_data_t data;
 	bui_font_info_t info;
-} bui_font_t;
+} bui_font_data_t;
 
 #include "bui_font_fonts.inc"
 
 const bui_font_id_t bui_font_null = NULL;
 
-#define bui_font_for_id(id) ((const bui_font_t*) PIC(id))
+#define BUI_FONT_DATA_FOR_ID(id) ((const bui_font_data_t*) PIC(id))
 
 const bui_font_info_t* bui_font_get_font_info(bui_font_id_t font_id) {
-	return &bui_font_for_id(font_id)->info;
+	return &BUI_FONT_DATA_FOR_ID(font_id)->info;
 }
 
 uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch) {
-	const bui_font_data_t *font_data = &bui_font_for_id(font_id)->data;
+	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font_id);
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
-	chari -= font_data->first_char;
+	chari -= font_data->info.first_char;
 	return ((const bui_font_char_t*) PIC(font_data->chars))[chari].char_width;
 }
 
 const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest) {
-	const bui_font_data_t *font_data = &bui_font_for_id(font_id)->data;
+	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font_id);
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
-	chari -= font_data->first_char;
-	bui_font_char_t font_char = ((const bui_font_char_t*) PIC(font_data->chars))[chari];
+	chari -= font_data->info.first_char;
+	bui_font_char_t font_char;
+	os_memcpy(&font_char, &((const bui_font_char_t*) PIC(font_data->chars))[chari], sizeof(bui_font_char_t));
 	if (w_dest != NULL)
 		*w_dest = font_char.char_width;
 	return (const uint8_t*) PIC(font_data->bitmaps) + font_char.bitmap_offset;
 }
 
-void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t y, bui_dir_e alignment,
-		bui_font_id_t font_id) {
+void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e alignment, bui_font_id_t font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
 	int16_t h = font_info->char_height;
 	int16_t w;
@@ -102,10 +93,10 @@ void bui_font_draw_char(bui_bitmap_128x32_t *buffer, char ch, int16_t x, int16_t
 	} else if (bui_dir_is_bottom(alignment)) {
 		y -= h;
 	}
-	bui_draw_bitmap(buffer, (bui_const_bitmap_t) { .w = w, .h = h, .bb = bitmap }, 0, 0, x, y, w, h);
+	bui_ctx_draw_mbitmap_full(ctx, (bui_const_bitmap_t) { .w = w, .h = h, .bb = bitmap }, x, y);
 }
 
-void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
+void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
 		bui_font_id_t font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
 	if (bui_dir_is_vtl_center(alignment)) {
@@ -136,8 +127,8 @@ void bui_font_draw_string(bui_bitmap_128x32_t *buffer, const char *str, int16_t 
 	for (; *str != '\0' && x < 128; str++) {
 		int16_t w;
 		const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
-		bui_draw_bitmap(buffer, (bui_const_bitmap_t) { .w = w, .h = font_info->char_height, .bb = bitmap }, 0, 0, x, y,
-				w, font_info->char_height);
+		bui_ctx_draw_mbitmap_full(ctx, (bui_const_bitmap_t) { .w = w, .h = font_info->char_height, .bb = bitmap }, x,
+				y);
 		x += w;
 		x += font_info->char_kerning;
 	}
