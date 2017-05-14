@@ -42,6 +42,11 @@ typedef struct __attribute__((packed)) {
 	bui_font_info_t info;
 } bui_font_data_t;
 
+static const uint32_t bui_font_palette[] = {
+	BUI_CLR_TRANSPARENT,
+	BUI_CLR_WHITE,
+};
+
 #include "bui_font_fonts.inc"
 
 const bui_font_id_t bui_font_null = NULL;
@@ -93,7 +98,13 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e
 	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
 		y -= h;
 	}
-	bui_ctx_draw_mbitmap_full(ctx, (bui_const_bitmap_t) { .w = w, .h = h, .bb = bitmap }, x, y);
+	bui_ctx_draw_bitmap_full(ctx, (bui_const_bitmap_t) {
+		.w = w,
+		.h = h,
+		.bb = bitmap,
+		.plt = bui_font_palette,
+		.bpp = 1,
+	}, x, y);
 }
 
 void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
@@ -127,8 +138,13 @@ void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y,
 	for (; *str != '\0' && x < 128; str++) {
 		int16_t w;
 		const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
-		bui_ctx_draw_mbitmap_full(ctx, (bui_const_bitmap_t) { .w = w, .h = font_info->char_height, .bb = bitmap }, x,
-				y);
+		bui_ctx_draw_bitmap_full(ctx, (bui_const_bitmap_t) {
+			.w = w,
+			.h = font_info->char_height,
+			.bb = bitmap,
+			.plt = bui_font_palette,
+			.bpp = 1,
+		}, x, y);
 		x += w;
 		x += font_info->char_kerning;
 	}
