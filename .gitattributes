@@ -10,6 +10,7 @@
 *.c text diff
 *.h text diff linguist-language=C
 *.inc text diff linguist-language=C
+*.py text diff
 Makefile text diff
 
 #     Informational files
