@@ -2,7 +2,7 @@
  * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
- * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
+ * Copyright (C) 2016, 2017 Parker Hoyes <contact@parkerhoyes.com>
  *
  * This software is provided "as-is", without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from the
@@ -90,46 +90,34 @@ typedef enum {
 } bui_dir_e;
 
 /*
- * Returns true if dir is on the left edge, false otherwise.
+ * Evaluate to true if dir is on the left edge, false otherwise.
  */
-static inline bool bui_dir_is_left(bui_dir_e dir) {
-	return (dir & BUI_DIR_LEFT) != 0;
-}
+#define BUI_DIR_IS_LEFT(dir) ((dir & BUI_DIR_LEFT) != 0)
 
 /*
- * Returns true if dir is on the right edge, false otherwise.
+ * Evaluate to true if dir is on the right edge, false otherwise.
  */
-static inline bool bui_dir_is_right(bui_dir_e dir) {
-	return (dir & BUI_DIR_RIGHT) != 0;
-}
+#define BUI_DIR_IS_RIGHT(dir) ((dir & BUI_DIR_RIGHT) != 0)
 
 /*
- * Returns true if dir is on the top edge, false otherwise.
+ * Evaluate to true if dir is on the top edge, false otherwise.
  */
-static inline bool bui_dir_is_top(bui_dir_e dir) {
-	return (dir & BUI_DIR_TOP) != 0;
-}
+#define BUI_DIR_IS_TOP(dir) ((dir & BUI_DIR_TOP) != 0)
 
 /*
- * Returns true if dir is on the bottom edge, false otherwise.
+ * Evaluate to true if dir is on the bottom edge, false otherwise.
  */
-static inline bool bui_dir_is_bottom(bui_dir_e dir) {
-	return (dir & BUI_DIR_BOTTOM) != 0;
-}
+#define BUI_DIR_IS_BOTTOM(dir) ((dir & BUI_DIR_BOTTOM) != 0)
 
 /*
- * Returns true if dir is horizontally centered, false otherwise.
+ * Evaluate to true if dir is horizontally centered, false otherwise.
  */
-static inline bool bui_dir_is_htl_center(bui_dir_e dir) {
-	return (dir & (BUI_DIR_LEFT | BUI_DIR_RIGHT)) == 0;
-}
+#define BUI_DIR_IS_HTL_CENTER(dir) ((dir & (BUI_DIR_LEFT | BUI_DIR_RIGHT)) == 0)
 
 /*
- * Returns true if dir is vertically centered, false otherwise.
+ * Evaluate to true if dir is vertically centered, false otherwise.
  */
-static inline bool bui_dir_is_vtl_center(bui_dir_e dir) {
-	return (dir & (BUI_DIR_TOP | BUI_DIR_BOTTOM)) == 0;
-}
+#define BUI_DIR_IS_VTL_CENTER(dir) ((dir & (BUI_DIR_TOP | BUI_DIR_BOTTOM)) == 0)
 
 #define BUI_DECLARE_BITMAP(name) \
 		extern const uint8_t bui_bitmap_ ## name ## _w; \

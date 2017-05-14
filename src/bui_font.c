@@ -2,7 +2,7 @@
  * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
- * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
+ * Copyright (C) 2016, 2017 Parker Hoyes <contact@parkerhoyes.com>
  *
  * This software is provided "as-is", without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from the
@@ -79,18 +79,18 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e
 	int16_t h = font_info->char_height;
 	int16_t w;
 	const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
-	if (bui_dir_is_htl_center(alignment)) {
+	if (BUI_DIR_IS_HTL_CENTER(alignment)) {
 		x -= w / 2;
 		if (w % 2 == 1)
 			x -= 1;
-	} else if (bui_dir_is_right(alignment)) {
+	} else if (BUI_DIR_IS_RIGHT(alignment)) {
 		x -= w;
 	}
-	if (bui_dir_is_vtl_center(alignment)) {
+	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
 		y -= h / 2;
 		if (h % 2 == 1)
 			y -= 1;
-	} else if (bui_dir_is_bottom(alignment)) {
+	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
 		y -= h;
 	}
 	bui_ctx_draw_mbitmap_full(ctx, (bui_const_bitmap_t) { .w = w, .h = h, .bb = bitmap }, x, y);
@@ -99,22 +99,22 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e
 void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
 		bui_font_id_t font_id) {
 	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
-	if (bui_dir_is_vtl_center(alignment)) {
+	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
 		y -= font_info->baseline_height / 2;
 		if (font_info->baseline_height % 2 == 1)
 			y -= 1;
-	} else if (bui_dir_is_bottom(alignment)) {
+	} else if (BUI_DIR_IS_BOTTOM(alignment)) {
 		y -= font_info->baseline_height;
 	}
 	if (y >= 32 || y + font_info->char_height <= 0)
 		return;
-	if (!bui_dir_is_left(alignment)) {
+	if (!BUI_DIR_IS_LEFT(alignment)) {
 		int16_t w = 0;
 		for (const char *s = str; *s != '\0'; s++) {
 			w += bui_font_get_char_width(font_id, *s);
 			w += font_info->char_kerning;
 		}
-		if (bui_dir_is_htl_center(alignment)) {
+		if (BUI_DIR_IS_HTL_CENTER(alignment)) {
 			x -= w / 2;
 			if (w % 2 == 1)
 				x -= 1;
