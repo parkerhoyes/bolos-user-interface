@@ -38,8 +38,95 @@ _Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
 #define BUI_CLR_WHITE        0xFFFFFFFF
 #define BUI_CLR_TRANSPARENT  0x00000000
 
-// NOTE: The definition of this struct is considered internal; it may be changed between versions without warning.
+typedef uint8_t bui_button_id_t;
+
+#define BUI_BUTTON_NANOS_NONE  ((bui_button_id_t) 0x00)
+#define BUI_BUTTON_NANOS_LEFT  ((bui_button_id_t) 0x01)
+#define BUI_BUTTON_NANOS_RIGHT ((bui_button_id_t) 0x02)
+#define BUI_BUTTON_NANOS_BOTH  ((bui_button_id_t) (BUI_BUTTON_NANOS_LEFT | BUI_BUTTON_NANOS_RIGHT))
+
+typedef enum {
+	// The button is not currently pressed
+	BUI_BUTTON_STATE_RELEASED = 0x01,
+	// The button is currently pressed, but hasn't been for a very long time
+	BUI_BUTTON_STATE_PRESSED = 0x02,
+	// The button is currently pressed, and has been for a long time (longer than would be considered a "click")
+	BUI_BUTTON_STATE_HELD = 0x03,
+} bui_button_state_t;
+
+#define BUI_BUTTON_STATE_IS_PRESSED(state) ((state & 0x02) == 0x02)
+
+typedef enum {
+	// Associated data: none
+	BUI_EVENT_DISPLAYED = 1,
+	// Associated data: bui_event_data_time_elapsed_t
+	BUI_EVENT_TIME_ELAPSED = 2,
+	// Associated data: bui_event_data_button_pressed_t
+	BUI_EVENT_BUTTON_PRESSED = 3,
+	// Associated data: bui_event_data_button_released_t
+	BUI_EVENT_BUTTON_RELEASED = 4,
+	// Associated data: bui_event_data_button_clicked_t
+	BUI_EVENT_BUTTON_CLICKED = 5,
+	// Associated data: bui_event_data_button_held_t
+	BUI_EVENT_BUTTON_HELD = 6,
+} bui_event_id_t;
+
 typedef struct {
+	// The time elapsed since the last event of the same type, or since the BUI context was initialized (whichever was
+	// most recent), in milliseconds; always > 0
+	uint32_t elapsed;
+} bui_event_data_time_elapsed_t;
+
+typedef struct {
+	// The button pressed; either BUI_BUTTON_NANOS_LEFT or BUI_BUTTON_NANOS_RIGHT
+	bui_button_id_t button;
+} bui_event_data_button_pressed_t;
+
+typedef struct {
+	// The button released; either BUI_BUTTON_NANOS_LEFT or BUI_BUTTON_NANOS_RIGHT
+	bui_button_id_t button;
+	// The state of the button before it was released; either BUI_BUTTON_STATE_PRESSED or BUI_BUTTON_STATE_HELD
+	bui_button_state_t prev_state;
+} bui_event_data_button_released_t;
+
+typedef struct {
+	// The button clicked; one of BUI_BUTTON_NANOS_LEFT, BUI_BUTTON_NANOS_RIGHT, or BUI_BUTTON_NANOS_BOTH
+	bui_button_id_t button;
+} bui_event_data_button_clicked_t;
+
+typedef struct {
+	// The button held; one of BUI_BUTTON_NANOS_LEFT or BUI_BUTTON_NANOS_RIGHT
+	bui_button_id_t button;
+} bui_event_data_button_held_t;
+
+#define BUI_EVENT_DATA_TIME_ELAPSED(event) ((const bui_event_data_time_elapsed_t*) (event)->data)
+#define BUI_EVENT_DATA_BUTTON_PRESSED(event) ((const bui_event_data_button_pressed_t*) (event)->data)
+#define BUI_EVENT_DATA_BUTTON_RELEASED(event) ((const bui_event_data_button_released_t*) (event)->data)
+#define BUI_EVENT_DATA_BUTTON_CLICKED(event) ((const bui_event_data_button_clicked_t*) (event)->data)
+#define BUI_EVENT_DATA_BUTTON_HELD(event) ((const bui_event_data_button_held_t*) (event)->data)
+
+typedef struct {
+	// The ID of the event
+	bui_event_id_t id;
+	// A pointer to extra data associated with the event, or NULL if there is no such data
+	const void *data;
+} bui_event_t;
+
+typedef struct bui_ctx_t_ bui_ctx_t;
+
+/*
+ * Handle an event that has occurred in the specified BUI context. This function may also be NULL if no action is to be
+ * performed. This pointer may be a pointer to NVRAM determined at link-time, in which case it must be passed through
+ * PIC(...) to translate it to a valid address at runtime.
+ *
+ * Args:
+ *     ctx: the BUI context in which the event has occurred
+ *     event: the event to be handled
+ */
+typedef void (*bui_event_handler_t)(bui_ctx_t *ctx, const bui_event_t *event);
+
+// NOTE: The definition of this struct is considered internal; it may be changed between versions without warning.
+struct bui_ctx_t_ {
 	// The data for the display buffer bitmap (128x32). This is a 2-dimensional bit array (or "bit block") representing
 	// the contents of the bitmap. The array is encoded as a sequence of bits, starting at the most significant bit,
 	// which is 128 * 32 bits in length, with big-endian byte order. Every 128 bits in the sequence is a row, with 32
@@ -55,7 +142,37 @@ typedef struct {
 	uint8_t dirty_w;
 	// The height of the dirty rectangle of this context; always in [0, 32]
 	uint8_t dirty_h;
-} bui_ctx_t;
+	// The ticker interval, in milliseconds; always in [10, 10000]
+	uint16_t ticker_interval;
+	// Called whenever a new BUI event occurs (if not NULL)
+	bui_event_handler_t event_handler;
+	// True if the left button is currently pressed, false otherwise
+	bool button_left : 1;
+	// The duration, in milliseconds, for which the left button has been in its current state (pressed / released);
+	// maximum of 2^10-1
+	uint16_t button_left_duration : 10;
+	// A representation of the duration for which the left button was in its previous state (pressed / released). 0
+	// indicates it was in the range of [0, BUI_BUTTON_FAST_THRESHOLD) ms, 1 indicates it was in the range of
+	// [BUI_BUTTON_FAST_THRESHOLD, BUI_BUTTON_CLICK_THRESHOLD) ms, and 2 indicates it was greater than or equal to
+	// BUI_BUTTON_CLICK_THRESHOLD ms.
+	uint8_t button_left_prev : 2;
+	// True if the left button is released, and has already triggered a click event because it was released, or false
+	// otherwise
+	bool button_left_clicked : 1;
+	// True if the right button is currently pressed, false otherwise
+	bool button_right : 1;
+	// The duration, in milliseconds, for which the right button has been in its current state (pressed / released);
+	// maximum of 2^10-1
+	uint16_t button_right_duration : 10;
+	// A representation of the duration for which the right button was in its previous state (pressed / released). 0
+	// indicates it was in the range of [0, BUI_BUTTON_FAST_THRESHOLD) ms, 1 indicates it was in the range of
+	// [BUI_BUTTON_FAST_THRESHOLD, BUI_BUTTON_CLICK_THRESHOLD) ms, and 2 indicates it was greater than or equal to
+	// BUI_BUTTON_CLICK_THRESHOLD ms.
+	uint8_t button_right_prev : 2;
+	// True if the right button is released, and has already triggered a click event because it was released, or false
+	// otherwise
+	bool button_right_clicked : 1;
+};
 
 typedef struct {
 	// The bitmap width in pixels; this must be > 0
@@ -459,7 +576,9 @@ void bui_bmp_fill(bui_bitmap_t bmp, uint32_t color);
 void bui_bmp_draw_pixel(bui_bitmap_t bmp, int16_t x, int16_t y, uint32_t color);
 
 /*
- * Initialize / reset a BUI context. The context's display buffer is initially filled with the background color.
+ * Initialize / reset a BUI context for the Ledger Nano S. The context's display buffer is initially filled with the
+ * background color and the ticker interval is set to 40 ms. The MCU must be ready to receive a command when this
+ * function is called.
  *
  * Args:
  *     ctx: the BUI context to be initialized / reset
@@ -467,17 +586,62 @@ void bui_bmp_draw_pixel(bui_bitmap_t bmp, int16_t x, int16_t y, uint32_t color);
 void bui_ctx_init(bui_ctx_t *ctx);
 
 /*
- * Send some data contained within the provided BUI context's display buffer to the MCU to be displayed, if there is
- * additional data to be displayed. The data is sent using a Display Status, and as such the MCU must be ready to
- * receive a Status when calling this function. If bui_ctx_is_displayed(ctx) is true, this function always returns
- * false and doesn't send anything to the MCU.
+ * Display content waiting within the BUI context's display buffer onto the device's screen by sending a display status
+ * over SEPROXYHAL. BUI will attempt to only flush the display buffer when this function is called; however, it may have
+ * to do so at other times for reasons including memory constraints on the SE. When the buffer is completely flushed,
+ * bui_ctx_is_displayed(...) will return true and a BUI_EVENT_DISPLAYED event will be dispatched. If this function is
+ * called when the display buffer is in the process of being flushed (bui_ctx_is_displayed(...) returns false), then
+ * this function has no side effects. When this function is called, the MCU must be ready to receive a status (unless
+ * bui_ctx_is_displayed(...) is false).
  *
  * Args:
  *     ctx: the BUI context
  * Returns:
- *     true if a Display Status was sent to the MCU, false if nothing was sent
+ *     true if a display status was sent as a result of the call to this function, false if no status was sent
  */
 bool bui_ctx_display(bui_ctx_t *ctx);
+
+/*
+ * Get the ticker interval in the specified BUI context.
+ *
+ * Args:
+ *     ctx: the BUI context
+ * Returns:
+ *     the ticker interval, in milliseconds; in the range [10, 10000]
+ */
+uint16_t bui_ctx_get_ticker(bui_ctx_t *ctx);
+
+/*
+ * Set the specified BUI context's ticker interval.
+ *
+ * Args:
+ *     ctx: the BUI context
+ *     interval: the desired ticker interval, in milliseconds; must be in [10, 10000]
+ */
+void bui_ctx_set_ticker(bui_ctx_t *ctx, uint16_t interval);
+
+/*
+ * Set (or unset) the event handler associated with the given BUI context.
+ *
+ * Args:
+ *     ctx: the BUI context
+ *     event_handler: the event handler, or NULL to unset the BUI context's event handler
+ */
+void bui_ctx_set_event_handler(bui_ctx_t *ctx, bui_event_handler_t event_handler);
+
+/*
+ * Handle a SEPROXYHAL event sent to the SE by the MCU. This function may or may not send commands and / or a status in
+ * return.
+ *
+ * Args:
+ *     ctx: the BUI context to be notified of the SEPROXYHAL event
+ *     allow_status: true if a status may be sent to the MCU by this function in response to the event, false otherwise;
+ *                   always passing false as this parameter may prevent BUI from functioning properly, so it should be
+ *                   done rarely
+ * Returns:
+ *     true if a status was sent to the MCU, false otherwise
+ */
+bool bui_ctx_seproxyhal_event(bui_ctx_t *ctx, bool allow_status);
 
 /*
  * Determine whether or not the provided BUI context has been fully displayed.
@@ -488,6 +652,26 @@ bool bui_ctx_display(bui_ctx_t *ctx);
  *     true if ctx is fully displayed, false otherwise
  */
 bool bui_ctx_is_displayed(const bui_ctx_t *ctx);
+
+/*
+ * Determine the current state of a button.
+ *
+ * Args:
+ *     ctx: the BUI context
+ *     button: the button; must be BUI_BUTTON_NANOS_LEFT or BUI_BUTTON_NANOS_RIGHT
+ * Returns:
+ *     one of BUI_BUTTON_STATE_RELEASED, BUI_BUTTON_STATE_PRESSED, or BUI_BUTTON_STATE_HELD
+ */
+bui_button_state_t bui_ctx_get_button(const bui_ctx_t *ctx, bui_button_id_t button);
+
+/*
+ * Dispatch an event in the provided BUI context.
+ *
+ * Args:
+ *     ctx: the BUI context
+ *     event: the event to be dispatched
+ */
+void bui_ctx_dispatch_event(bui_ctx_t *ctx, const bui_event_t *event);
 
 /*
  * Fill the provided BUI context's display with the specified color. If the resulting colors are not in the display's

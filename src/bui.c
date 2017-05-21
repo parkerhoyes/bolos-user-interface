@@ -33,6 +33,15 @@
 
 #include "bui_bitmaps.inc"
 
+// The duration, in milliseconds, longer than which a button must be held for it to not be considered a "click" anymore
+#ifndef BUI_BUTTON_LONG_THRESHOLD
+#define BUI_BUTTON_LONG_THRESHOLD 800
+#endif
+
+#ifndef BUI_BUTTON_FAST_THRESHOLD
+#define BUI_BUTTON_FAST_THRESHOLD 300
+#endif
+
 #define BUI_ABS_DIST(a, b) ((a) > (b) ? (a) - (b) : (b) - (a))
 
 /*
@@ -277,6 +286,50 @@ static inline void bui_reverse_bytes(uint8_t *buffer, uint32_t size) {
 }
 
 /*
+ * Send some data contained within the provided BUI context's display buffer to the MCU to be displayed. The data is
+ * sent using a display status, and as such the MCU must be ready to receive a status when calling this function. There
+ * must be additional data within the display buffer ready to be sent (bui_ctx_is_displayed(ctx) must be false).
+ *
+ * Args:
+ *     ctx: the BUI context
+ */
+static inline void bui_ctx_send_display_status(bui_ctx_t *ctx) {
+	uint8_t sub_w = ctx->dirty_w;
+	uint8_t sub_h = ctx->dirty_h;
+	// Constrain the bounds of the subrectangle of the dirty rectangle such that it fits in 64 bytes
+	uint16_t size;
+	if (sub_w > sub_h) {
+		while ((size = ((uint16_t) sub_w * sub_h + 7) / 8) > 64)
+			sub_w -= 1;
+	} else {
+		while ((size = ((uint16_t) sub_w * sub_h + 7) / 8) > 64)
+			sub_h -= 1;
+	}
+	// Encode the subrectangle for transport
+	uint8_t sub[64];
+	os_memset(sub, 0, size);
+	uint8_t xr = 128 - ctx->dirty_x - sub_w;
+	uint8_t yr = 32 - ctx->dirty_y - sub_h;
+	for (uint8_t i = 0; i < sub_h; i++) {
+		uint16_t src_i = 128 * (yr + i) + xr;
+		uint16_t dest_i = sub_w * i;
+		bui_bitblit_or(&ctx->bb[src_i / 8], src_i % 8, &sub[dest_i / 8], dest_i % 8, sub_w);
+	}
+	bui_reverse_bytes(sub, size);
+	// Display the subrectangle
+	uint32_t palette[] = {0x00000000, 0x00FFFFFF};
+	io_seproxyhal_display_bitmap(ctx->dirty_x, ctx->dirty_y, sub_w, sub_h, palette, 1, sub);
+	// Exclude subrectangle from the dirty rectangle
+	if (sub_w != ctx->dirty_w) {
+		ctx->dirty_x += sub_w;
+		ctx->dirty_w -= sub_w;
+	} else {
+		ctx->dirty_y += sub_h;
+		ctx->dirty_h -= sub_h;
+	}
+}
+
+/*
  * Extend the provided BUI context's dirty rectangle by the minimum amount such that it encloses the provided rectangle.
  * The provided rectangle must be entirely within the display's coordinate plane.
  *
@@ -417,49 +470,236 @@ void bui_ctx_init(bui_ctx_t *ctx) {
 	ctx->dirty_y = 0;
 	ctx->dirty_w = 128;
 	ctx->dirty_h = 32;
+	ctx->ticker_interval = 40;
+	ctx->event_handler = NULL;
+	ctx->button_left = false;
+	ctx->button_left_duration = 0;
+	ctx->button_left_prev = 0;
+	ctx->button_left_clicked = true; // This prevents a button clicked event from being triggered
+	ctx->button_right = false;
+	ctx->button_right_duration = 0;
+	ctx->button_right_prev = 0;
+	ctx->button_right_clicked = true; // This prevents a button clicked event from being triggered
+	bui_ctx_set_ticker(ctx, 40);
 }
 
 bool bui_ctx_display(bui_ctx_t *ctx) {
-	if (ctx->dirty_w == 0 || ctx->dirty_h == 0)
+	if (bui_ctx_is_displayed(ctx))
 		return false;
-	uint8_t sub_w = ctx->dirty_w;
-	uint8_t sub_h = ctx->dirty_h;
-	// Constrain the bounds of the subrectangle of the dirty rectangle such that it fits in 64 bytes
-	uint16_t size;
-	if (sub_w > sub_h) {
-		while ((size = ((uint16_t) sub_w * sub_h + 7) / 8) > 64)
-			sub_w -= 1;
-	} else {
-		while ((size = ((uint16_t) sub_w * sub_h + 7) / 8) > 64)
-			sub_h -= 1;
-	}
-	// Encode the subrectangle for transport
-	uint8_t sub[64];
-	os_memset(sub, 0, size);
-	uint8_t xr = 128 - ctx->dirty_x - sub_w;
-	uint8_t yr = 32 - ctx->dirty_y - sub_h;
-	for (uint8_t i = 0; i < sub_h; i++) {
-		uint16_t src_i = 128 * (yr + i) + xr;
-		uint16_t dest_i = sub_w * i;
-		bui_bitblit_or(&ctx->bb[src_i / 8], src_i % 8, &sub[dest_i / 8], dest_i % 8, sub_w);
-	}
-	bui_reverse_bytes(sub, size);
-	// Display the subrectangle
-	uint32_t palette[] = {0x00000000, 0x00FFFFFF};
-	io_seproxyhal_display_bitmap(ctx->dirty_x, ctx->dirty_y, sub_w, sub_h, palette, 1, sub);
-	// Exclude subrectangle from the dirty rectangle
-	if (sub_w != ctx->dirty_w) {
-		ctx->dirty_x += sub_w;
-		ctx->dirty_w -= sub_w;
-	} else {
-		ctx->dirty_y += sub_h;
-		ctx->dirty_h -= sub_h;
-	}
+	bui_ctx_send_display_status(ctx);
 	return true;
+}
+
+uint16_t bui_ctx_get_ticker(bui_ctx_t *ctx) {
+	return ctx->ticker_interval;
+}
+
+void bui_ctx_set_ticker(bui_ctx_t *ctx, uint16_t interval) {
+	// Set the ticker interval to interval ms
+	G_io_seproxyhal_spi_buffer[0] = SEPROXYHAL_TAG_SET_TICKER_INTERVAL;
+	G_io_seproxyhal_spi_buffer[1] = 0; // Message length, high byte
+	G_io_seproxyhal_spi_buffer[2] = 2; // Message length, low byte
+	G_io_seproxyhal_spi_buffer[3] = (interval >> 8) & 0xFF; // Ticker interval, high byte
+	G_io_seproxyhal_spi_buffer[4] = interval & 0xFF; // Ticker interval, low byte
+	io_seproxyhal_spi_send(G_io_seproxyhal_spi_buffer, 5);
+}
+
+void bui_ctx_set_event_handler(bui_ctx_t *ctx, bui_event_handler_t event_handler) {
+	if (event_handler != NULL)
+		event_handler = (bui_event_handler_t) PIC(event_handler);
+	ctx->event_handler = event_handler;
+}
+
+bool bui_ctx_seproxyhal_event(bui_ctx_t *ctx, bool allow_status) {
+	bool status_sent = false;
+	switch (G_io_seproxyhal_spi_buffer[0]) {
+	case SEPROXYHAL_TAG_BUTTON_PUSH_EVENT: {
+		unsigned int button_mask = G_io_seproxyhal_spi_buffer[3] >> 1;
+		uint8_t left = 0, right = 0; // 0 = no change, 1 = pressed, 2 = released, 3 = clicked
+		if ((button_mask & BUTTON_LEFT) != 0) {
+			if (!ctx->button_left) {
+				left = 1;
+				uint16_t prev = ctx->button_left_duration;
+				ctx->button_left = true;
+				ctx->button_left_duration = 0;
+				ctx->button_left_prev = prev < BUI_BUTTON_FAST_THRESHOLD ? 0 :
+						(prev < BUI_BUTTON_LONG_THRESHOLD ? 1 : 2);
+				ctx->button_left_clicked = false;
+			}
+		} else {
+			if (ctx->button_left) {
+				left = ctx->button_left_duration < BUI_BUTTON_LONG_THRESHOLD ? 3 : 2;
+				uint16_t prev = ctx->button_left_duration;
+				ctx->button_left = false;
+				ctx->button_left_duration = 0;
+				ctx->button_left_prev = prev < BUI_BUTTON_FAST_THRESHOLD ? 0 :
+						(prev < BUI_BUTTON_LONG_THRESHOLD ? 1 : 2);
+			}
+		}
+		if ((button_mask & BUTTON_RIGHT) != 0) {
+			if (!ctx->button_right) {
+				right = 1;
+				uint16_t prev = ctx->button_right_duration;
+				ctx->button_right = true;
+				ctx->button_right_duration = 0;
+				ctx->button_right_prev = prev < BUI_BUTTON_FAST_THRESHOLD ? 0 :
+						(prev < BUI_BUTTON_LONG_THRESHOLD ? 1 : 2);
+				ctx->button_right_clicked = false;
+			}
+		} else {
+			if (ctx->button_right) {
+				right = ctx->button_right_duration < BUI_BUTTON_LONG_THRESHOLD ? 3 : 2;
+				uint16_t prev = ctx->button_right_duration;
+				ctx->button_right = false;
+				ctx->button_right_duration = 0;
+				ctx->button_right_prev = prev < BUI_BUTTON_FAST_THRESHOLD ? 0 :
+						(prev < BUI_BUTTON_LONG_THRESHOLD ? 1 : 2);
+			}
+		}
+		switch (left) {
+		case 1: {
+			bui_event_data_button_pressed_t data = { .button = BUI_BUTTON_NANOS_LEFT };
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_PRESSED, .data = &data };
+			bui_ctx_dispatch_event(ctx, &event);
+		} break;
+		case 2: {
+			bui_event_data_button_released_t data = { .button = BUI_BUTTON_NANOS_LEFT,
+					.prev_state = BUI_BUTTON_STATE_HELD };
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_RELEASED, .data = &data };
+			bui_ctx_dispatch_event(ctx, &event);
+		} break;
+		case 3: {
+			bui_event_data_button_released_t data = { .button = BUI_BUTTON_NANOS_LEFT,
+					.prev_state = BUI_BUTTON_STATE_PRESSED };
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_RELEASED, .data = &data };
+			bui_ctx_dispatch_event(ctx, &event);
+		} break;
+		}
+		switch (right) {
+		case 1: {
+			bui_event_data_button_pressed_t data = { .button = BUI_BUTTON_NANOS_RIGHT };
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_PRESSED, .data = &data };
+			bui_ctx_dispatch_event(ctx, &event);
+		} break;
+		case 2: {
+			bui_event_data_button_released_t data = { .button = BUI_BUTTON_NANOS_RIGHT,
+					.prev_state = BUI_BUTTON_STATE_HELD };
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_RELEASED, .data = &data };
+			bui_ctx_dispatch_event(ctx, &event);
+		} break;
+		case 3: {
+			bui_event_data_button_released_t data = { .button = BUI_BUTTON_NANOS_RIGHT,
+					.prev_state = BUI_BUTTON_STATE_PRESSED };
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_RELEASED, .data = &data };
+			bui_ctx_dispatch_event(ctx, &event);
+		} break;
+		}
+	} break;
+	case SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT: {
+		if (allow_status && !bui_ctx_is_displayed(ctx)) {
+			bui_ctx_send_display_status(ctx);
+			status_sent = true;
+			if (bui_ctx_is_displayed(ctx)) {
+				bui_event_t event = { .id = BUI_EVENT_DISPLAYED, .data = NULL };
+				bui_ctx_dispatch_event(ctx, &event);
+			}
+		}
+	} break;
+	case SEPROXYHAL_TAG_TICKER_EVENT: {
+		uint16_t elapsed = ctx->ticker_interval;
+		bool left_held, right_held;
+		{
+			// Elapse time for left button
+			uint16_t left_prev = ctx->button_left_duration;
+			uint16_t left_curr = left_prev + elapsed;
+			if (left_curr > 0x03FF)
+				left_curr = 0x03FF;
+			ctx->button_left_duration = left_curr;
+			left_held = ctx->button_left && left_prev < BUI_BUTTON_LONG_THRESHOLD
+					&& left_curr >= BUI_BUTTON_LONG_THRESHOLD;
+			// Elapse time for right button
+			uint16_t right_prev = ctx->button_right_duration;
+			uint16_t right_curr = right_prev + elapsed;
+			if (right_curr > 0x03FF)
+				right_curr = 0x03FF;
+			ctx->button_right_duration = right_curr;
+			right_held = ctx->button_right && right_prev < BUI_BUTTON_LONG_THRESHOLD
+					&& right_curr >= BUI_BUTTON_LONG_THRESHOLD;
+			// Emit button clicked events, if applicable
+			if (!ctx->button_left && !ctx->button_right) {
+				if (!ctx->button_left_clicked && left_prev == 0 && ctx->button_left_prev < 2) {
+					bui_button_id_t button = BUI_BUTTON_NANOS_LEFT;
+					ctx->button_left_clicked = true;
+					if (!ctx->button_right && !ctx->button_right_clicked && right_curr < BUI_BUTTON_LONG_THRESHOLD
+							&& ctx->button_right_prev < 2) {
+						button = BUI_BUTTON_NANOS_BOTH;
+						ctx->button_right_clicked = true;
+					}
+					bui_event_data_button_clicked_t data = { .button = button };
+					bui_event_t event = { .id = BUI_EVENT_BUTTON_CLICKED, .data = &data };
+					bui_ctx_dispatch_event(ctx, &event);
+				}
+				if (!ctx->button_right_clicked && right_prev == 0 && ctx->button_right_prev < 2) {
+					bui_button_id_t button = BUI_BUTTON_NANOS_RIGHT;
+					ctx->button_right_clicked = true;
+					if (!ctx->button_left && !ctx->button_left_clicked && left_curr < BUI_BUTTON_LONG_THRESHOLD
+							&& ctx->button_left_prev < 2) {
+						button = BUI_BUTTON_NANOS_BOTH;
+						ctx->button_left_clicked = true;
+					}
+					bui_event_data_button_clicked_t data = { .button = button };
+					bui_event_t event = { .id = BUI_EVENT_BUTTON_CLICKED, .data = &data };
+					bui_ctx_dispatch_event(ctx, &event);
+				}
+			}
+		}
+		// Dispatch button held events, if applicable
+		if (left_held || right_held) {
+			bui_event_data_button_held_t data;
+			bui_event_t event = { .id = BUI_EVENT_BUTTON_HELD, .data = &data };
+			if (left_held) {
+				data.button = BUI_BUTTON_NANOS_LEFT;
+				bui_ctx_dispatch_event(ctx, &event);
+			}
+			if (right_held) {
+				data.button = BUI_BUTTON_NANOS_RIGHT;
+				bui_ctx_dispatch_event(ctx, &event);
+			}
+		}
+		// Dispatch time elapsed event
+		bui_event_data_time_elapsed_t data = { .elapsed = elapsed };
+		bui_event_t event = { .id = BUI_EVENT_TIME_ELAPSED, .data = &data };
+		bui_ctx_dispatch_event(ctx, &event);
+	} break;
+	}
+	return status_sent;
 }
 
 bool bui_ctx_is_displayed(const bui_ctx_t *ctx) {
 	return ctx->dirty_w == 0 || ctx->dirty_h == 0;
+}
+
+bui_button_state_t bui_ctx_get_button(const bui_ctx_t *ctx, bui_button_id_t button) {
+	if (button == BUI_BUTTON_NANOS_LEFT) {
+		if (ctx->button_left) {
+			return ctx->button_left_duration < BUI_BUTTON_LONG_THRESHOLD ?
+					BUI_BUTTON_STATE_PRESSED : BUI_BUTTON_STATE_HELD;
+		} else {
+			return BUI_BUTTON_STATE_RELEASED;
+		}
+	} else {
+		if (ctx->button_right) {
+			return ctx->button_right_duration < BUI_BUTTON_LONG_THRESHOLD ?
+					BUI_BUTTON_STATE_PRESSED : BUI_BUTTON_STATE_HELD;
+		} else {
+			return BUI_BUTTON_STATE_RELEASED;
+		}
+	}
+}
+
+void bui_ctx_dispatch_event(bui_ctx_t *ctx, const bui_event_t *event) {
+	if (ctx->event_handler != NULL)
+		ctx->event_handler(ctx, event);
 }
 
 void bui_ctx_fill(bui_ctx_t *ctx, uint32_t color) {
