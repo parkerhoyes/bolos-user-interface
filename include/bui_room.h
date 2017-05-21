@@ -29,8 +29,6 @@
 
 #include "bui.h"
 
-typedef struct bui_room_t bui_room_t;
-
 /*
  * The BUI Room Module uses a stack-based architecture to implement a room-based GUI design. A "room" is a specific mode
  * that the display can be in, and it defines how the GUI is drawn onto the display and what to do with user input.
@@ -64,95 +62,68 @@ typedef struct {
 	void *frame_ptr;
 } bui_room_ctx_t;
 
-/*
- * Indicate that the room has been "entered" into, meaning it is now the room displayed on the screen. This function
- * will be called before any other callback for the specified room. This pointer may be a pointer to NVRAM determined at
- * link-time, in which case it must be passed through PIC(...) to translate it to a valid address at runtime.
- *
- * Args:
- *     ctx: the room context that contains the room
- *     room: the room; this must be a valid pointer at runtime, meaning if it points to NVRAM it must be passed through
- *           PIC(...) if necessary
- *     up: true if the room is being entered after having its stack frame be created anew, false if the room is being
- *         entered after a room higher on the stack was exited
- */
-typedef void (*bui_room_enter_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, bool up);
+typedef enum {
+	// Associated data: bui_room_event_enter_t. This event indicates that the current room has been "entered" into,
+	// meaning it is now the room displayed on the screen. This event will be dispatched to the room before any other
+	// event.
+	BUI_ROOM_EVENT_ENTER = 1,
+	// Associated data: bui_room_event_exit_t. This event indicates that the current room has been "exited" from,
+	// meaning that it is no longer the room displayed on the screen. After this event is dispatched, no other events
+	// will be dispatched to the room until the room is re-entered (and BUI_ROOM_EVENT_ENTER is dispatched). All data
+	// remaining in the current stack frame after this event is handled by the current room is the data intended to be
+	// returned to the room with the stack frame directly below the current room. If this event is dispatched to the
+	// base room, the room's event handler does not return.
+	BUI_ROOM_EVENT_EXIT = 2,
+	// Associated data: bui_room_event_draw_t. This event is dispatched to request the current room to draw itself onto
+	// the BUI context referenced in this event's data.
+	BUI_ROOM_EVENT_DRAW = 3,
+	// Associated data: bui_event_t. Events forwarded to rooms using bui_room_forward_event(...) are forwarded by
+	// dispatching this event to the room.
+	BUI_ROOM_EVENT_FORWARD = 4,
+} bui_room_event_id_t;
+
+typedef struct {
+	// true if the current room is being entered after having its stack frame created anew, or false if the room is
+	// being entered after a room higher on the stack was exited
+	bool up;
+} bui_room_event_data_enter_t;
+
+typedef struct {
+	// true if the current room is being exited before the stack frame for a new room is pushed onto the stack, or false
+	// if the room is being exited before having its stack frame popped off the stack
+	bool up;
+} bui_room_event_data_exit_t;
+
+typedef struct {
+	// The BUI context onto which the current room is to be drawn.
+	bui_ctx_t *bui_ctx;
+} bui_room_event_data_draw_t;
+
+typedef struct {
+	bui_room_event_id_t id;
+	const void *data;
+} bui_room_event_t;
+
+#define BUI_ROOM_EVENT_DATA_ENTER(event) ((const bui_room_event_data_enter_t*) (event)->data)
+#define BUI_ROOM_EVENT_DATA_EXIT(event) ((const bui_room_event_data_exit_t*) (event)->data)
+#define BUI_ROOM_EVENT_DATA_DRAW(event) ((const bui_room_event_data_draw_t*) (event)->data)
+#define BUI_ROOM_EVENT_DATA_FORWARD(event) ((const bui_event_t*) (event)->data)
 
 /*
- * Indicate that a room has been "exited" from, meaning that it is no longer the room displayed on the screen. After
- * this callback is called, no other callback will be called for the specified room until bui_room_enter_callback_t is
- * called. This pointer may be a pointer to NVRAM determined at link-time, in which case it must be passed through
- * PIC(...) to translate it to a valid address at runtime. All data remaining in the current stack frame after this
- * function returns is the data intended to be returned to the room with the stack frame directly below this one.
- *
- * If the room for which this callback is called is the base room, this function does not return.
+ * Handle an event that has occurred in the specified room context. This function may also be NULL if no action is to be
+ * performed. This pointer may be a pointer to NVRAM determined at link-time, in which case it must be passed through
+ * PIC(...) to translate it to a valid address at runtime.
  *
  * Args:
- *     ctx: the room context that contains the room
- *     room: the room; this must be a valid pointer at runtime, meaning if it points to NVRAM it must be passed through
- *           PIC(...) if necessary
- *     up: true if the room is being exited before the stack frame for a new room is pushed onto the stack, false if the
- *         room is being exited before having its stack frame popped off the stack
+ *     ctx: the room context in which the event has occurred
+ *     event: the event to be handled
  */
-typedef void (*bui_room_exit_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, bool up);
+typedef void (*bui_room_event_handler_t)(bui_room_ctx_t *ctx, const bui_room_event_t *event);
 
-/*
- * Indicate to the room that a certain amount of time has passed. This callback may be used for animation purposes. This
- * pointer may be a pointer to NVRAM determined at link-time, in which case it must be passed through PIC(...) to
- * translate it to a valid address at runtime.
- *
- * Args:
- *     ctx: the room context that contains the room
- *     room: the room; this must be a valid pointer at runtime, meaning if it points to NVRAM it must be passed through
- *           PIC(...) if necessary
- *     elapsed: the amount of time elapsed since this callback was last called or since the room was entered into,
- *              whichever came last; this may not be 0
- */
-typedef void (*bui_room_tick_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, uint32_t elapsed);
-
-/*
- * Indicate to the room that a button press occurred. Both left and right may be true (if both were pressed at the same
- * time), but both may not be false. This pointer may be a pointer to NVRAM determined at link-time, in which case it
- * must be passed through PIC(...) to translate it to a valid address at runtime.
- *
- * Args:
- *     ctx: the room context that contains the room
- *     room: the room; this must be a valid pointer at runtime, meaning if it points to NVRAM it must be passed through
- *           PIC(...) if necessary
- *     left: true if the left button was pressed, false otherwise
- *     right: true if the right button was pressed, false otherwise
- */
-typedef void (*bui_room_button_callback_t)(bui_room_ctx_t *ctx, bui_room_t *room, bool left, bool right);
-
-/*
- * Draw the room onto the specified BUI context. This pointer may be a pointer to NVRAM determined at link-time, in
- * which case it must be passed through PIC(...) to translate it to a valid address at runtime.
- *
- * Args:
- *     ctx: the room context that contains the room
- *     room: the room; this must be a valid pointer at runtime, meaning if it points to NVRAM it must be passed through
- *           PIC(...) if necessary
- *     bui_ctx: the BUI context
- */
-typedef void (*bui_room_draw_callback_t)(bui_room_ctx_t *ctx, const bui_room_t *room, bui_ctx_t *bui_ctx);
-
-struct bui_room_t {
-	// See type documentation for bui_room_enter_callback_t for more information about how this callback is used. This
-	// may also be NULL, to perform no action.
-	bui_room_enter_callback_t enter;
-	// See type documentation for bui_room_exit_callback_t for more information about how this callback is used. This
-	// may also be NULL, to perform no action.
-	bui_room_exit_callback_t exit;
-	// See type documentation for bui_room_tick_callback_t for more information about how this callback is used. This
-	// may also be NULL, to perform no action.
-	bui_room_tick_callback_t tick;
-	// See type documentation for bui_room_button_callback_t for more information about how this callback is used. This
-	// may also be NULL, to perform no action.
-	bui_room_button_callback_t button;
-	// See type documentation for bui_room_draw_callback_t for more information about how this callback is used. This
-	// may also be NULL, to perform no action.
-	bui_room_draw_callback_t draw;
-};
+typedef struct {
+	// The event handler used to dispatch an event to this room.
+	bui_room_event_handler_t event_handler;
+} bui_room_t;
 
 /*
  * Initialize a room context with the specified preallocated stack and base room. The room's enter callback is called.
@@ -271,54 +242,22 @@ void* bui_room_alloc(bui_room_ctx_t *ctx, uint16_t size);
 void* bui_room_dealloc(bui_room_ctx_t *ctx, uint16_t size);
 
 /*
- * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "enter"
- * callback, unless it is NULL.
+ * Dispatch the provided event to the current room in the provided room context.
  *
  * Args:
  *     ctx: the room context
- *     up: passed to the callback
+ *     event: the room event to be dispatched
  */
-void bui_room_current_enter(bui_room_ctx_t *ctx, bool up);
+void bui_room_dispatch_event(bui_room_ctx_t *ctx, const bui_room_event_t *event);
 
 /*
- * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "exit"
- * callback, unless it is NULL.
+ * Forward a BUI event (of type bui_event_t, NOT bui_room_event_t) to the current room in the specified room context by
+ * dispatching a room event with ID BUI_ROOM_EVENT_FORWARD.
  *
  * Args:
  *     ctx: the room context
- *     up: passed to the callback
+ *     bui_event: the BUI event to be forwarded
  */
-void bui_room_current_exit(bui_room_ctx_t *ctx, bool up);
-
-/*
- * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "tick"
- * callback, unless it is NULL.
- *
- * Args:
- *     ctx: the room context
- *     elapsed: passed to the callback
- */
-void bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed);
-
-/*
- * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "button"
- * callback, unless it is NULL.
- *
- * Args:
- *     ctx: the room context
- *     left: passed to the callback
- *     right: passed to the callback
- */
-void bui_room_current_button(bui_room_ctx_t *ctx, bool left, bool right);
-
-/*
- * Retrieve the room pointer for the current stack frame in the specified room context, then call the room's "draw"
- * callback, unless it is NULL.
- *
- * Args:
- *     ctx: the room context
- *     bui_ctx: passed to the callback
- */
-void bui_room_current_draw(bui_room_ctx_t *ctx, bui_ctx_t *bui_ctx);
+void bui_room_forward_event(bui_room_ctx_t *ctx, const bui_event_t *bui_event);
 
 #endif

@@ -45,11 +45,19 @@ void bui_room_ctx_init(bui_room_ctx_t *ctx, void *stack, const bui_room_t *room,
 	ctx->frame_ptr = stack;
 	if (args_size != 0)
 		bui_room_push(ctx, args, args_size);
-	bui_room_current_enter(ctx, true);
+	{
+		bui_room_event_data_enter_t data = { .up = true };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 }
 
 void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *args, uint16_t args_size) {
-	bui_room_current_exit(ctx, true);
+	{
+		bui_room_event_data_exit_t data = { .up = true };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_EXIT, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 	uint8_t pad = BUI_ROOM_PAD(ctx->stack_ptr + 3);
 	uint16_t frame_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + pad;
@@ -63,11 +71,19 @@ void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *arg
 	ctx->frame_ptr = ctx->stack_ptr;
 	if (args_size != 0)
 		bui_room_push(ctx, args, args_size);
-	bui_room_current_enter(ctx, true);
+	{
+		bui_room_event_data_enter_t data = { .up = true };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 }
 
 void bui_room_exit(bui_room_ctx_t *ctx) {
-	bui_room_current_exit(ctx, false);
+	{
+		bui_room_event_data_exit_t data = { .up = false };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_EXIT, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 	uint16_t ret_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	void *ret = ctx->frame_ptr;
 	ctx->frame_ptr = (uint8_t*) ctx->frame_ptr - (sizeof(const bui_room_t*) + sizeof(uint16_t));
@@ -81,7 +97,11 @@ void bui_room_exit(bui_room_ctx_t *ctx) {
 		os_memmove(ctx->stack_ptr, ret, ret_size);
 		ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + ret_size;
 	}
-	bui_room_current_enter(ctx, false);
+	{
+		bui_room_event_data_enter_t data = { .up = false };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 }
 
 const bui_room_t* bui_room_get_current(const bui_room_ctx_t *ctx) {
@@ -118,47 +138,16 @@ void* bui_room_dealloc(bui_room_ctx_t *ctx, uint16_t size) {
 	return ptr;
 }
 
-void bui_room_current_enter(bui_room_ctx_t *ctx, bool up) {
+void bui_room_dispatch_event(bui_room_ctx_t *ctx, const bui_room_event_t *event) {
 	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_enter_callback_t callback = current->enter;
-	if (callback == NULL)
+	bui_room_event_handler_t event_handler = current->event_handler;
+	if (event_handler == NULL)
 		return;
-	callback = (bui_room_enter_callback_t) PIC(callback);
-	callback(ctx, current, up);
+	event_handler = (bui_room_event_handler_t) PIC(event_handler);
+	event_handler(ctx, event);
 }
 
-void bui_room_current_exit(bui_room_ctx_t *ctx, bool up) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_exit_callback_t callback = current->exit;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_exit_callback_t) PIC(callback);
-	callback(ctx, current, up);
-}
-
-void bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_tick_callback_t callback = current->tick;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_tick_callback_t) PIC(callback);
-	callback(ctx, current, elapsed);
-}
-
-void bui_room_current_button(bui_room_ctx_t *ctx, bool left, bool right) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_button_callback_t callback = current->button;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_button_callback_t) PIC(callback);
-	callback(ctx, current, left, right);
-}
-
-void bui_room_current_draw(bui_room_ctx_t *ctx, bui_ctx_t *bui_ctx) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_draw_callback_t callback = current->draw;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_draw_callback_t) PIC(callback);
-	callback(ctx, current, bui_ctx);
+void bui_room_forward_event(bui_room_ctx_t *ctx, const bui_event_t *bui_event) {
+	bui_room_event_t event = { .id = BUI_ROOM_EVENT_FORWARD, .data = bui_event };
+	bui_room_dispatch_event(ctx, &event);
 }
