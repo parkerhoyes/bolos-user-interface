@@ -2,7 +2,7 @@
  * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
- * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
+ * Copyright (C) 2016, 2017 Parker Hoyes <contact@parkerhoyes.com>
  *
  * This software is provided "as-is", without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from the
@@ -93,7 +93,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
  *     if a character was chosen, that character is returned; if no character was chosen, 0x1FF is returned; if
  *     backspace is chosen, 0x2FF is returned; if a special option character is chosen then 0x1FF is returned
  */
-int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
+int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_t side);
 
 /*
  * Progress the keyboard's animations for the specified amount of time. If the keyboard's animations are disabled, the

@@ -212,17 +212,17 @@ typedef struct {
 	uint8_t bpp;
 } bui_const_bitmap_t;
 
-typedef enum {
-	BUI_DIR_LEFT         = 0b00000001,
-	BUI_DIR_RIGHT        = 0b00000010,
-	BUI_DIR_TOP          = 0b00000100,
-	BUI_DIR_BOTTOM       = 0b00001000,
-	BUI_DIR_CENTER       = 0b00010000,
-	BUI_DIR_LEFT_TOP     = (int) BUI_DIR_LEFT | (int) BUI_DIR_TOP,
-	BUI_DIR_LEFT_BOTTOM  = (int) BUI_DIR_LEFT | (int) BUI_DIR_BOTTOM,
-	BUI_DIR_RIGHT_TOP    = (int) BUI_DIR_RIGHT | (int) BUI_DIR_TOP,
-	BUI_DIR_RIGHT_BOTTOM = (int) BUI_DIR_RIGHT | (int) BUI_DIR_BOTTOM,
-} bui_dir_e;
+typedef uint8_t bui_dir_t;
+
+#define BUI_DIR_CENTER       ((bui_dir_t) 0b00000000)
+#define BUI_DIR_LEFT         ((bui_dir_t) 0b00000001)
+#define BUI_DIR_RIGHT        ((bui_dir_t) 0b00000010)
+#define BUI_DIR_TOP          ((bui_dir_t) 0b00000100)
+#define BUI_DIR_BOTTOM       ((bui_dir_t) 0b00001000)
+#define BUI_DIR_LEFT_TOP     ((bui_dir_t) (BUI_DIR_LEFT | BUI_DIR_TOP))
+#define BUI_DIR_LEFT_BOTTOM  ((bui_dir_t) (BUI_DIR_LEFT | BUI_DIR_BOTTOM))
+#define BUI_DIR_RIGHT_TOP    ((bui_dir_t) (BUI_DIR_RIGHT | BUI_DIR_TOP))
+#define BUI_DIR_RIGHT_BOTTOM ((bui_dir_t) (BUI_DIR_RIGHT | BUI_DIR_BOTTOM))
 
 /*
  * Evaluate to true if dir is on the left edge, false otherwise.

@@ -108,7 +108,7 @@ const uint8_t* bui_font_get_char_bitmap(bui_font_t font, char ch, int16_t *w_des
  *     alignment: the position of the anchor within the text boundaries
  *     font: the font to be used to render the character
  */
-void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e alignment, bui_font_t font);
+void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_t alignment, bui_font_t font);
 
 /*
  * Draw a string in the specified font in the specified BUI context. Any part of the string out of bounds of the display
@@ -126,6 +126,6 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e
  *     alignment: the position of the anchor within the text boundaries
  *     font: the font to be used to render the string
  */
-void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment, bui_font_t font);
+void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_t alignment, bui_font_t font);
 
 #endif

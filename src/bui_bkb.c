@@ -180,7 +180,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
 	bkb->cursor_tick = 0;
 }
 
-int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side) {
+int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_t side) {
 	// Handle full type buffer
 	if (bkb->type_buff_size == bkb->type_buff_cap) {
 		if (side == BUI_DIR_LEFT) { // If backspace key was chosen
