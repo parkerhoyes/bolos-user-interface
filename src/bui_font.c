@@ -49,16 +49,16 @@ static const uint32_t bui_font_palette[] = {
 
 #include "bui_font_fonts.inc"
 
-const bui_font_id_t bui_font_null = NULL;
+const bui_font_t bui_font_null = NULL;
 
 #define BUI_FONT_DATA_FOR_ID(id) ((const bui_font_data_t*) PIC(id))
 
-const bui_font_info_t* bui_font_get_font_info(bui_font_id_t font_id) {
-	return &BUI_FONT_DATA_FOR_ID(font_id)->info;
+const bui_font_info_t* bui_font_get_font_info(bui_font_t font) {
+	return &BUI_FONT_DATA_FOR_ID(font)->info;
 }
 
-uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch) {
-	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font_id);
+uint8_t bui_font_get_char_width(bui_font_t font, char ch) {
+	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font);
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
@@ -66,8 +66,8 @@ uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch) {
 	return ((const bui_font_char_t*) PIC(font_data->chars))[chari].char_width;
 }
 
-const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest) {
-	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font_id);
+const uint8_t* bui_font_get_char_bitmap(bui_font_t font, char ch, int16_t *w_dest) {
+	const bui_font_data_t *font_data = BUI_FONT_DATA_FOR_ID(font);
 	uint8_t chari = ch;
 	if (chari >= 0x80)
 		chari -= 0xA0 - 0x80;
@@ -79,11 +79,11 @@ const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t 
 	return (const uint8_t*) PIC(font_data->bitmaps) + font_char.bitmap_offset;
 }
 
-void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e alignment, bui_font_id_t font_id) {
-	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
+void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e alignment, bui_font_t font) {
+	const bui_font_info_t *font_info = bui_font_get_font_info(font);
 	int16_t h = font_info->char_height;
 	int16_t w;
-	const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, ch, &w);
+	const uint8_t *bitmap = bui_font_get_char_bitmap(font, ch, &w);
 	if (BUI_DIR_IS_HTL_CENTER(alignment)) {
 		x -= w / 2;
 		if (w % 2 == 1)
@@ -107,9 +107,8 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e
 	}, x, y);
 }
 
-void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
-		bui_font_id_t font_id) {
-	const bui_font_info_t *font_info = bui_font_get_font_info(font_id);
+void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment, bui_font_t font) {
+	const bui_font_info_t *font_info = bui_font_get_font_info(font);
 	if (BUI_DIR_IS_VTL_CENTER(alignment)) {
 		y -= font_info->baseline_height / 2;
 		if (font_info->baseline_height % 2 == 1)
@@ -122,7 +121,7 @@ void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y,
 	if (!BUI_DIR_IS_LEFT(alignment)) {
 		int16_t w = 0;
 		for (const char *s = str; *s != '\0'; s++) {
-			w += bui_font_get_char_width(font_id, *s);
+			w += bui_font_get_char_width(font, *s);
 			w += font_info->char_kerning;
 		}
 		if (BUI_DIR_IS_HTL_CENTER(alignment)) {
@@ -137,7 +136,7 @@ void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y,
 	}
 	for (; *str != '\0' && x < 128; str++) {
 		int16_t w;
-		const uint8_t *bitmap = bui_font_get_char_bitmap(font_id, *str, &w);
+		const uint8_t *bitmap = bui_font_get_char_bitmap(font, *str, &w);
 		bui_ctx_draw_bitmap_full(ctx, (bui_const_bitmap_t) {
 			.w = w,
 			.h = font_info->char_height,
