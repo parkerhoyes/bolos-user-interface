@@ -80,6 +80,23 @@ const bui_font_info_t* bui_font_get_font_info(bui_font_t font);
 uint8_t bui_font_get_char_width(bui_font_t font, char ch);
 
 /*
+ * Get the width of a given string in the specified font.
+ *
+ * Args:
+ *     font: the font
+ *     str: the string, as a null-terminated string of characters renderable in font
+ * Returns:
+ *     the width of the given string, in pixels; if the width is greater than 1023, 1023 is returned
+ */
+int16_t bui_font_get_str_width(bui_font_t font, const char *str);
+
+/*
+ * This is a convenience function very similar to bui_font_get_str_width(...), except instead of accepting a
+ * null-terminated string as an argument, this function accepts a character buffer and its length.
+ */
+int16_t bui_font_get_char_buff_width(bui_font_t font, const char *char_buff, uint8_t len);
+
+/*
  * Get the pointer to the bitmap for a character in a particular font.
  *
  * Args:
@@ -127,5 +144,12 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_t
  *     font: the font to be used to render the string
  */
 void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_t alignment, bui_font_t font);
+
+/*
+ * This is a convenience function very similar to bui_font_draw_string(...), except instead of accepting a
+ * null-terminated string as an argument, this function accepts a character buffer and its length.
+ */
+void bui_font_draw_char_buff(bui_ctx_t *ctx, const char *char_buff, uint8_t len, int16_t x, int16_t y,
+		bui_dir_t alignment, bui_font_t font);
 
 #endif
