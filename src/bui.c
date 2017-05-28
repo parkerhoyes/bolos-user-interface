@@ -29,8 +29,6 @@
 #include "os.h"
 #include "os_io_seproxyhal.h"
 
-#include "bui_font.h"
-
 #include "bui_bitmaps.inc"
 
 // The duration, in milliseconds, longer than which a button must be held for it to not be considered a "click" anymore
