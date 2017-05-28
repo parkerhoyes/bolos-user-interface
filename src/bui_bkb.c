@@ -219,6 +219,8 @@ int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_t side) {
 	uint8_t charsn = layout_size;
 	if (bkb->type_buff_size != 0 && bkb->option == '\0') // Handle backspace key, if applicable
 		charsn += 1;
+	if (charsn == 0) // Empty layout and no backspace key
+		return 0x1FF; // No character was chosen
 	uint8_t charsi = 0;
 	for (uint8_t i = 0; i < bkb->bits_typed_size; i++) {
 		if (NTH_BIT(bkb->bits_typed, i) == 0) {
@@ -414,7 +416,13 @@ void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx) {
 				x = (int) prev_x + ((int) x - (int) prev_x) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 				y = (int) prev_y + ((int) y - (int) prev_y) * (int) bkb->keys_tick / KEYS_ANIMATION_LEN;
 			}
-			bui_bkb_draw_key(ctx, layout[lefti + i], x, y);
+			if (lefti + i == layout_size) {
+				// Draw backspace key
+				bui_ctx_draw_bitmap_full(ctx, BUI_BKB_BMP_BACKSPACE, x, y);
+			} else {
+				// Draw normal key
+				bui_bkb_draw_key(ctx, layout[lefti + i], x, y);
+			}
 		}
 
 		// Draw keys on right side
