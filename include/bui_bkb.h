@@ -119,6 +119,22 @@ bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed);
 void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx);
 
 /*
+ * Set the layout for the specified keyboard. If any choices were made about the next character to be typed, those
+ * choices will be reset (but the type buffer will not be modified).
+ *
+ * Args:
+ *     bkb: the keyboard
+ *     layout: a string containing all of the characters to be displayed on the keyboard, in order; all characters must
+ *            be displayable in the font bui_font_lucida_console_8; the only whitespace character allowed is a space;
+ *            the character OPTION_NUMERICS is a special character that will provide an option to type in numeric digits
+ *            from 0 to 9; the character OPTION_SYMBOLS is a special character that will provide an option to type in
+ *            symbols; the character OPTION_TOGGLE_CASE is a special character that will toggle the case of all
+ *            alphabetic characters available for the user to choose from; if empty, this may be NULL
+ *     layout_size: the length of the layout string; must be <= 35
+ */
+void bui_bkb_set_layout(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size);
+
+/*
  * Set the type buffer for the specified keyboard.
  *
  * Args:
