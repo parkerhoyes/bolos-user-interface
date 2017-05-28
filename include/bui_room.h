@@ -28,6 +28,7 @@
 #include <stdint.h>
 
 #include "bui.h"
+#include "bui_font.h"
 
 /*
  * The BUI Room Module uses a stack-based architecture to implement a room-based GUI design. A "room" is a specific mode
@@ -259,5 +260,23 @@ void bui_room_dispatch_event(bui_room_ctx_t *ctx, const bui_room_event_t *event)
  *     bui_event: the BUI event to be forwarded
  */
 void bui_room_forward_event(bui_room_ctx_t *ctx, const bui_event_t *bui_event);
+
+/*
+ * A "built-in" implementation of a BUI room that displays a custom message (in a custom font) on the screen until the
+ * user acknowledges the message.
+ *
+ * This room should be entered into with the arguments on the room context stack being a single copy of
+ * bui_room_message_args_t. This room does not return anything.
+ */
+extern const bui_room_t bui_room_message;
+
+typedef struct {
+	// The message to be displayed on screen, as a null-terminated string. All characters must be renderable in font
+	// (except '\n' characters may also be included). Must have <= 255 lines (must have < 255 '\n' characters). Each
+	// line must have <= 255 characters.
+	const char *msg;
+	// The font in which to render msg.
+	bui_font_t font;
+} bui_room_message_args_t;
 
 #endif
