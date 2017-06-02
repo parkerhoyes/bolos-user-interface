@@ -102,6 +102,10 @@ demonstrate the use of this library.
   app to look at for more advanced developers who would like to learn how to use
   the Room Module to create advanced user interfaces with menus and text inputs.
 
+- [Seed Utility App](https://github.com/parkerhoyes/bolos-app-seedutility) -
+  This app is another fairly large-scale use of all of the features of this
+  library.
+
 If you use this library in your project, please feel free to email me (or submit
 a pull request) and I'll link to it in this README.
 
