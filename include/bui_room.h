@@ -152,9 +152,11 @@ void bui_room_ctx_init(bui_room_ctx_t *ctx, void *stack, const bui_room_t *room,
  * Args:
  *     ctx: the room context
  *     room: the room to enter; this is passed through PIC(...) before being pushed onto the stack
- *     args: the pointer to the arguments to be copied onto the stack; this pointer is not dereferenced if args_size is
- *           0
- *     args_size: the size of the arguments to be copied onto the stack, in bytes, or zero to copy no arguments
+ *     args: the pointer to the arguments to be passed to the called room or NULL if the arguments are to be popped off
+ *           of the current stack frame; this pointer is not accessed if args_size is 0
+ *     args_size: the size of the arguments to be copied onto the new stack frame, in bytes, or zero to copy no
+ *                arguments; if args is NULL and this is nonzero, this amount of data is moved from the current room's
+ *                stack frame to the called room's new stack frame
  */
 void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *args, uint16_t args_size);
 

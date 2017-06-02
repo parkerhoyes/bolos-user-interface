@@ -59,7 +59,13 @@ void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *arg
 		bui_room_event_t event = { .id = BUI_ROOM_EVENT_EXIT, .data = &data };
 		bui_room_dispatch_event(ctx, &event);
 	}
+	if (args == NULL && args_size != 0)
+		ctx->stack_ptr -= args_size;
 	uint8_t pad = BUI_ROOM_PAD(ctx->stack_ptr + 3);
+	if (args == NULL && args_size != 0) {
+		void *new_frame = (uint8_t*) ctx->stack_ptr + pad + 7;
+		os_memmove(new_frame, ctx->stack_ptr, args_size);
+	}
 	uint16_t frame_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + pad;
 	*((uint8_t*) ctx->stack_ptr) = pad;
@@ -70,8 +76,12 @@ void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *arg
 	*((const bui_room_t**) ctx->stack_ptr) = room;
 	ctx->stack_ptr = (const bui_room_t**) ctx->stack_ptr + 1;
 	ctx->frame_ptr = ctx->stack_ptr;
-	if (args_size != 0)
-		bui_room_push(ctx, args, args_size);
+	if (args_size != 0) {
+		if (args != NULL)
+			bui_room_push(ctx, args, args_size);
+		else
+			ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + args_size;
+	}
 	{
 		bui_room_event_data_enter_t data = { .up = true };
 		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
