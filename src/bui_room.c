@@ -208,3 +208,71 @@ static void bui_room_message_handle_event(bui_room_ctx_t *ctx, const bui_room_ev
 const bui_room_t bui_room_message = {
 	.event_handler = bui_room_message_handle_event,
 };
+
+static void bui_room_confirm_handle_event(bui_room_ctx_t *ctx, const bui_room_event_t *event) {
+	switch (event->id) {
+	case BUI_ROOM_EVENT_EXIT: {
+		bui_room_confirm_ret_t ret;
+		bui_room_pop(ctx, &ret.confirmed, sizeof(bool));
+		bui_room_dealloc_frame(ctx);
+		bui_room_push(ctx, &ret, sizeof(ret));
+	} break;
+	case BUI_ROOM_EVENT_DRAW: {
+		const bui_room_event_data_draw_t *data = BUI_ROOM_EVENT_DATA_DRAW(event);
+		bui_room_confirm_args_t *args = ctx->frame_ptr;
+		// Draw text
+		{
+			uint8_t char_height = bui_font_get_font_info(args->font)->char_height;
+			uint8_t n_lines = 1;
+			for (const char *ch = args->msg; *ch != '\0'; ch++) {
+				if (*ch == '\n')
+					n_lines++;
+			}
+			int16_t y = -((int16_t) n_lines * (char_height + 1) - 1) / 2 + 16;
+			bool last_line = false;
+			for (const char *line = args->msg; !last_line;) {
+				uint8_t line_len = 0;
+				for (;; line_len++) {
+					if (line[line_len] == '\0') {
+						last_line = true;
+						break;
+					}
+					if (line[line_len] == '\n') {
+						last_line = false;
+						break;
+					}
+				}
+				bui_font_draw_char_buff(data->bui_ctx, line, line_len, 64, y, BUI_DIR_TOP, args->font);
+				line += line_len + 1;
+				y += char_height + 1;
+			}
+		}
+		// Draw check & cross icons
+		bui_ctx_draw_bitmap_full(data->bui_ctx, BUI_BMP_ICON_CROSS, 3, 12);
+		bui_ctx_draw_bitmap_full(data->bui_ctx, BUI_BMP_ICON_CHECK, 117, 13);
+	} break;
+	case BUI_ROOM_EVENT_FORWARD: {
+		const bui_event_t *bui_event = BUI_ROOM_EVENT_DATA_FORWARD(event);
+		switch (bui_event->id) {
+		case BUI_EVENT_BUTTON_CLICKED: {
+			bui_button_id_t button = BUI_EVENT_DATA_BUTTON_CLICKED(bui_event)->button;
+			if (button == BUI_BUTTON_NANOS_BOTH)
+				break;
+			bool *confirmed = bui_room_alloc(ctx, sizeof(bool));
+			*confirmed = button == BUI_BUTTON_NANOS_RIGHT;
+			bui_room_exit(ctx);
+		} break;
+		// Other events are acknowledged
+		default:
+			break;
+		}
+	} break;
+	// Other events are acknowledged
+	default:
+		break;
+	}
+}
+
+const bui_room_t bui_room_confirm = {
+	.event_handler = bui_room_confirm_handle_event,
+};

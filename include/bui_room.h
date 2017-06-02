@@ -279,4 +279,26 @@ typedef struct {
 	bui_font_t font;
 } bui_room_message_args_t;
 
+/*
+ * A "built-in" implementation of a BUI room that displays a custom message (in a custom font) on the screen and asks
+ * the user to confirm some action (using a check icon and a cross icon).
+ *
+ * This room should be entered into with the arguments on the room context stack being a single copy of
+ * bui_room_confirm_ret_t. This room returns a single copy of bui_room_confirm_ret_t.
+ */
+extern const bui_room_t bui_room_confirm;
+
+typedef struct {
+	// The message to be displayed on screen, as a null-terminated string. All characters must be renderable in font
+	// (except '\n' characters may also be included). Must have <= 255 lines (must have < 255 '\n' characters). Each
+	// line must have <= 255 characters.
+	const char *msg;
+	// The font in which to render msg.
+	bui_font_t font;
+} bui_room_confirm_args_t;
+
+typedef struct {
+	bool confirmed; // True if the user selected the check icon, false if they selected the cross icon
+} bui_room_confirm_ret_t;
+
 #endif
