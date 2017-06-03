@@ -30,7 +30,7 @@
 _Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
 
 #define BUI_VER_MAJOR 0
-#define BUI_VER_MINOR 7
+#define BUI_VER_MINOR 8
 #define BUI_VER_PATCH 0
 
 // Colors are encoded in ARGB 8888 (alpha-red-green-blue, 8 bits per channel).
