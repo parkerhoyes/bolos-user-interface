@@ -2,7 +2,7 @@
  * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
- * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
+ * Copyright (C) 2016, 2017 Parker Hoyes <contact@parkerhoyes.com>
  *
  * This software is provided "as-is", without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from the
@@ -29,25 +29,25 @@
 #include "bui.h"
 
 // NOTE: The definition of this type is considered internal. It may be changed between versions without warning.
-typedef const void* bui_font_id_t;
+typedef const void* bui_font_t;
 
 // This is not a valid font; it may be used as a unique identifier, and is guaranteed to be equal to the
-// zero-initialized value of bui_font_id_t.
-extern const bui_font_id_t bui_font_null;
-extern const bui_font_id_t bui_font_comic_sans_ms_20;
-extern const bui_font_id_t bui_font_lucida_console_8;
-extern const bui_font_id_t bui_font_lucida_console_15;
-extern const bui_font_id_t bui_font_open_sans_bold_13;
-extern const bui_font_id_t bui_font_open_sans_bold_21;
-extern const bui_font_id_t bui_font_open_sans_extrabold_11;
-extern const bui_font_id_t bui_font_open_sans_light_13;
-extern const bui_font_id_t bui_font_open_sans_light_14;
-extern const bui_font_id_t bui_font_open_sans_light_16;
-extern const bui_font_id_t bui_font_open_sans_light_20;
-extern const bui_font_id_t bui_font_open_sans_light_21;
-extern const bui_font_id_t bui_font_open_sans_light_32;
-extern const bui_font_id_t bui_font_open_sans_regular_11;
-extern const bui_font_id_t bui_font_open_sans_semibold_18;
+// zero-initialized value of bui_font_t.
+extern const bui_font_t bui_font_null;
+extern const bui_font_t bui_font_comic_sans_ms_20;
+extern const bui_font_t bui_font_lucida_console_8;
+extern const bui_font_t bui_font_lucida_console_15;
+extern const bui_font_t bui_font_open_sans_bold_13;
+extern const bui_font_t bui_font_open_sans_bold_21;
+extern const bui_font_t bui_font_open_sans_extrabold_11;
+extern const bui_font_t bui_font_open_sans_light_13;
+extern const bui_font_t bui_font_open_sans_light_14;
+extern const bui_font_t bui_font_open_sans_light_16;
+extern const bui_font_t bui_font_open_sans_light_20;
+extern const bui_font_t bui_font_open_sans_light_21;
+extern const bui_font_t bui_font_open_sans_light_32;
+extern const bui_font_t bui_font_open_sans_regular_11;
+extern const bui_font_t bui_font_open_sans_semibold_18;
 
 // NOTE: Despite the font's range, they never include characters in the range 0x80 to 0x9F (both inclusive)
 typedef struct {
@@ -59,38 +59,55 @@ typedef struct {
 } bui_font_info_t;
 
 /*
- * Get the info for a particular font given its ID.
+ * Get the info for a particular font.
  *
  * Args:
- *     font_id: the ID of the font
+ *     font: the font
  * Returns:
  *     a pointer to a structure containing info about the specified font
  */
-const bui_font_info_t* bui_font_get_font_info(bui_font_id_t font_id);
+const bui_font_info_t* bui_font_get_font_info(bui_font_t font);
 
 /*
  * Get the width of a given character in the specified font.
  *
  * Args:
- *     font_id: the ID of the font
+ *     font: the font
  *     ch: the character code
  * Returns:
  *     the width of the given character, in pixels
  */
-uint8_t bui_font_get_char_width(bui_font_id_t font_id, char ch);
+uint8_t bui_font_get_char_width(bui_font_t font, char ch);
+
+/*
+ * Get the width of a given string in the specified font.
+ *
+ * Args:
+ *     font: the font
+ *     str: the string, as a null-terminated string of characters renderable in font
+ * Returns:
+ *     the width of the given string, in pixels; if the width is greater than 1023, 1023 is returned
+ */
+int16_t bui_font_get_str_width(bui_font_t font, const char *str);
+
+/*
+ * This is a convenience function very similar to bui_font_get_str_width(...), except instead of accepting a
+ * null-terminated string as an argument, this function accepts a character buffer and its length.
+ */
+int16_t bui_font_get_char_buff_width(bui_font_t font, const char *char_buff, uint8_t len);
 
 /*
  * Get the pointer to the bitmap for a character in a particular font.
  *
  * Args:
- *     font_id: the ID of the font
+ *     font: the font
  *     ch: the character code
  *     w_dest: a pointer to an int in which the width of the character will be stored; if this is NULL, it is not
  *             accessed
  * Returns:
  *     the pointer to the bitmap for the specified character in the specified font
  */
-const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t *w_dest);
+const uint8_t* bui_font_get_char_bitmap(bui_font_t font, char ch, int16_t *w_dest);
 
 /*
  * Draw a character in the specified font in the specified BUI context. Any part of the character out of bounds of the
@@ -106,9 +123,9 @@ const uint8_t* bui_font_get_char_bitmap(bui_font_id_t font_id, char ch, int16_t 
  *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
  *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
  *     alignment: the position of the anchor within the text boundaries
- *     font_id: the ID of the font to be used to render the character
+ *     font: the font to be used to render the character
  */
-void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e alignment, bui_font_id_t font_id);
+void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_t alignment, bui_font_t font);
 
 /*
  * Draw a string in the specified font in the specified BUI context. Any part of the string out of bounds of the display
@@ -124,9 +141,15 @@ void bui_font_draw_char(bui_ctx_t *ctx, char ch, int16_t x, int16_t y, bui_dir_e
  *     x: the x-coordinate of the text anchor; must be >= -32,768 and <= 32,767
  *     y: the y-coordinate of the text anchor; must be >= -32,768 and <= 32,767
  *     alignment: the position of the anchor within the text boundaries
- *     font_id: the ID of the font to be used to render the string
+ *     font: the font to be used to render the string
  */
-void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_e alignment,
-		bui_font_id_t font_id);
+void bui_font_draw_string(bui_ctx_t *ctx, const char *str, int16_t x, int16_t y, bui_dir_t alignment, bui_font_t font);
+
+/*
+ * This is a convenience function very similar to bui_font_draw_string(...), except instead of accepting a
+ * null-terminated string as an argument, this function accepts a character buffer and its length.
+ */
+void bui_font_draw_char_buff(bui_ctx_t *ctx, const char *char_buff, uint8_t len, int16_t x, int16_t y,
+		bui_dir_t alignment, bui_font_t font);
 
 #endif

@@ -1,4 +1,4 @@
-# BOLOS User Interface Library v0.7.0
+# BOLOS User Interface Library v0.8.0
 
 [This repository](https://github.com/parkerhoyes/bolos-user-interface) contains
 a user interface library for
@@ -101,6 +101,10 @@ demonstrate the use of this library.
   fairly large-scale use of all of the features of this library. This is a good
   app to look at for more advanced developers who would like to learn how to use
   the Room Module to create advanced user interfaces with menus and text inputs.
+
+- [Seed Utility App](https://github.com/parkerhoyes/bolos-app-seedutility) -
+  This app is another fairly large-scale use of all of the features of this
+  library.
 
 If you use this library in your project, please feel free to email me (or submit
 a pull request) and I'll link to it in this README.

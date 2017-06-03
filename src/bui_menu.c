@@ -2,7 +2,7 @@
  * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
- * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
+ * Copyright (C) 2016, 2017 Parker Hoyes <contact@parkerhoyes.com>
  *
  * This software is provided "as-is", without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from the
@@ -93,9 +93,9 @@ void bui_menu_draw(const bui_menu_menu_t *menu, bui_ctx_t *ctx) {
 
 	// Draw arrows
 	if (focus != 0)
-		bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_UP, 3, 14);
+		bui_ctx_draw_bitmap_full(ctx, BUI_BMP_ICON_UP, 3, 14);
 	if (focus + 1 != count)
-		bui_ctx_draw_mbitmap_full(ctx, BUI_BITMAP_ICON_DOWN, 118, 14);
+		bui_ctx_draw_bitmap_full(ctx, BUI_BMP_ICON_DOWN, 118, 14);
 
 	uint8_t focus_size;
 	int32_t focus_pos;

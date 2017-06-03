@@ -2,7 +2,7 @@
  * License for the BOLOS User Interface Library project, originally found here:
  * https://github.com/parkerhoyes/bolos-user-interface
  *
- * Copyright (C) 2016 Parker Hoyes <contact@parkerhoyes.com>
+ * Copyright (C) 2016, 2017 Parker Hoyes <contact@parkerhoyes.com>
  *
  * This software is provided "as-is", without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from the
@@ -93,7 +93,7 @@ void bui_bkb_init(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size, c
  *     if a character was chosen, that character is returned; if no character was chosen, 0x1FF is returned; if
  *     backspace is chosen, 0x2FF is returned; if a special option character is chosen then 0x1FF is returned
  */
-int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_e side);
+int bui_bkb_choose(bui_bkb_bkb_t *bkb, bui_dir_t side);
 
 /*
  * Progress the keyboard's animations for the specified amount of time. If the keyboard's animations are disabled, the
@@ -117,6 +117,22 @@ bool bui_bkb_animate(bui_bkb_bkb_t *bkb, uint32_t elapsed);
  *     ctx: the BUI context in which the keyboard is to be drawn
  */
 void bui_bkb_draw(const bui_bkb_bkb_t *bkb, bui_ctx_t *ctx);
+
+/*
+ * Set the layout for the specified keyboard. If any choices were made about the next character to be typed, those
+ * choices will be reset (but the type buffer will not be modified).
+ *
+ * Args:
+ *     bkb: the keyboard
+ *     layout: a string containing all of the characters to be displayed on the keyboard, in order; all characters must
+ *            be displayable in the font bui_font_lucida_console_8; the only whitespace character allowed is a space;
+ *            the character OPTION_NUMERICS is a special character that will provide an option to type in numeric digits
+ *            from 0 to 9; the character OPTION_SYMBOLS is a special character that will provide an option to type in
+ *            symbols; the character OPTION_TOGGLE_CASE is a special character that will toggle the case of all
+ *            alphabetic characters available for the user to choose from; if empty, this may be NULL
+ *     layout_size: the length of the layout string; must be <= 35
+ */
+void bui_bkb_set_layout(bui_bkb_bkb_t *bkb, const char *layout, uint8_t layout_size);
 
 /*
  * Set the type buffer for the specified keyboard.

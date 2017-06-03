@@ -30,6 +30,7 @@
 #include "os.h"
 
 #include "bui.h"
+#include "bui_font.h"
 
 _Static_assert(sizeof(void*) == 4, "sizeof(void*) must be 4");
 _Static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) must be 1");
@@ -45,12 +46,26 @@ void bui_room_ctx_init(bui_room_ctx_t *ctx, void *stack, const bui_room_t *room,
 	ctx->frame_ptr = stack;
 	if (args_size != 0)
 		bui_room_push(ctx, args, args_size);
-	bui_room_current_enter(ctx, true);
+	{
+		bui_room_event_data_enter_t data = { .up = true };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 }
 
 void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *args, uint16_t args_size) {
-	bui_room_current_exit(ctx, true);
+	{
+		bui_room_event_data_exit_t data = { .up = true };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_EXIT, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
+	if (args == NULL && args_size != 0)
+		ctx->stack_ptr -= args_size;
 	uint8_t pad = BUI_ROOM_PAD(ctx->stack_ptr + 3);
+	if (args == NULL && args_size != 0) {
+		void *new_frame = (uint8_t*) ctx->stack_ptr + pad + 7;
+		os_memmove(new_frame, ctx->stack_ptr, args_size);
+	}
 	uint16_t frame_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + pad;
 	*((uint8_t*) ctx->stack_ptr) = pad;
@@ -61,13 +76,25 @@ void bui_room_enter(bui_room_ctx_t *ctx, const bui_room_t *room, const void *arg
 	*((const bui_room_t**) ctx->stack_ptr) = room;
 	ctx->stack_ptr = (const bui_room_t**) ctx->stack_ptr + 1;
 	ctx->frame_ptr = ctx->stack_ptr;
-	if (args_size != 0)
-		bui_room_push(ctx, args, args_size);
-	bui_room_current_enter(ctx, true);
+	if (args_size != 0) {
+		if (args != NULL)
+			bui_room_push(ctx, args, args_size);
+		else
+			ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + args_size;
+	}
+	{
+		bui_room_event_data_enter_t data = { .up = true };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 }
 
 void bui_room_exit(bui_room_ctx_t *ctx) {
-	bui_room_current_exit(ctx, false);
+	{
+		bui_room_event_data_exit_t data = { .up = false };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_EXIT, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 	uint16_t ret_size = (uint8_t*) ctx->stack_ptr - (uint8_t*) ctx->frame_ptr;
 	void *ret = ctx->frame_ptr;
 	ctx->frame_ptr = (uint8_t*) ctx->frame_ptr - (sizeof(const bui_room_t*) + sizeof(uint16_t));
@@ -81,7 +108,11 @@ void bui_room_exit(bui_room_ctx_t *ctx) {
 		os_memmove(ctx->stack_ptr, ret, ret_size);
 		ctx->stack_ptr = (uint8_t*) ctx->stack_ptr + ret_size;
 	}
-	bui_room_current_enter(ctx, false);
+	{
+		bui_room_event_data_enter_t data = { .up = false };
+		bui_room_event_t event = { .id = BUI_ROOM_EVENT_ENTER, .data = &data };
+		bui_room_dispatch_event(ctx, &event);
+	}
 }
 
 const bui_room_t* bui_room_get_current(const bui_room_ctx_t *ctx) {
@@ -118,47 +149,140 @@ void* bui_room_dealloc(bui_room_ctx_t *ctx, uint16_t size) {
 	return ptr;
 }
 
-void bui_room_current_enter(bui_room_ctx_t *ctx, bool up) {
+void bui_room_dispatch_event(bui_room_ctx_t *ctx, const bui_room_event_t *event) {
 	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_enter_callback_t callback = current->enter;
-	if (callback == NULL)
+	bui_room_event_handler_t event_handler = current->event_handler;
+	if (event_handler == NULL)
 		return;
-	callback = (bui_room_enter_callback_t) PIC(callback);
-	callback(ctx, current, up);
+	event_handler = (bui_room_event_handler_t) PIC(event_handler);
+	event_handler(ctx, event);
 }
 
-void bui_room_current_exit(bui_room_ctx_t *ctx, bool up) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_exit_callback_t callback = current->exit;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_exit_callback_t) PIC(callback);
-	callback(ctx, current, up);
+void bui_room_forward_event(bui_room_ctx_t *ctx, const bui_event_t *bui_event) {
+	bui_room_event_t event = { .id = BUI_ROOM_EVENT_FORWARD, .data = bui_event };
+	bui_room_dispatch_event(ctx, &event);
 }
 
-void bui_room_current_tick(bui_room_ctx_t *ctx, uint32_t elapsed) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_tick_callback_t callback = current->tick;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_tick_callback_t) PIC(callback);
-	callback(ctx, current, elapsed);
+static void bui_room_message_handle_event(bui_room_ctx_t *ctx, const bui_room_event_t *event) {
+	switch (event->id) {
+	case BUI_ROOM_EVENT_EXIT: {
+		bui_room_dealloc_frame(ctx);
+	} break;
+	case BUI_ROOM_EVENT_DRAW: {
+		const bui_room_event_data_draw_t *data = BUI_ROOM_EVENT_DATA_DRAW(event);
+		bui_room_message_args_t *args = ctx->frame_ptr;
+		uint8_t char_height = bui_font_get_font_info(args->font)->char_height;
+		uint8_t n_lines = 1;
+		for (const char *ch = args->msg; *ch != '\0'; ch++) {
+			if (*ch == '\n')
+				n_lines++;
+		}
+		int16_t y = -((int16_t) n_lines * (char_height + 1) - 1) / 2 + 16;
+		bool last_line = false;
+		for (const char *line = args->msg; !last_line;) {
+			uint8_t line_len = 0;
+			for (;; line_len++) {
+				if (line[line_len] == '\0') {
+					last_line = true;
+					break;
+				}
+				if (line[line_len] == '\n') {
+					last_line = false;
+					break;
+				}
+			}
+			bui_font_draw_char_buff(data->bui_ctx, line, line_len, 64, y, BUI_DIR_TOP, args->font);
+			line += line_len + 1;
+			y += char_height + 1;
+		}
+	} break;
+	case BUI_ROOM_EVENT_FORWARD: {
+		const bui_event_t *bui_event = BUI_ROOM_EVENT_DATA_FORWARD(event);
+		switch (bui_event->id) {
+		case BUI_EVENT_BUTTON_CLICKED: {
+			bui_button_id_t button = BUI_EVENT_DATA_BUTTON_CLICKED(bui_event)->button;
+			if (button == BUI_BUTTON_NANOS_BOTH)
+				bui_room_exit(ctx);
+		} break;
+		// Other events are acknowledged
+		default:
+			break;
+		}
+	} break;
+	// Other events are acknowledged
+	default:
+		break;
+	}
 }
 
-void bui_room_current_button(bui_room_ctx_t *ctx, bool left, bool right) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_button_callback_t callback = current->button;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_button_callback_t) PIC(callback);
-	callback(ctx, current, left, right);
+const bui_room_t bui_room_message = {
+	.event_handler = bui_room_message_handle_event,
+};
+
+static void bui_room_confirm_handle_event(bui_room_ctx_t *ctx, const bui_room_event_t *event) {
+	switch (event->id) {
+	case BUI_ROOM_EVENT_EXIT: {
+		bui_room_confirm_ret_t ret;
+		bui_room_pop(ctx, &ret.confirmed, sizeof(bool));
+		bui_room_dealloc_frame(ctx);
+		bui_room_push(ctx, &ret, sizeof(ret));
+	} break;
+	case BUI_ROOM_EVENT_DRAW: {
+		const bui_room_event_data_draw_t *data = BUI_ROOM_EVENT_DATA_DRAW(event);
+		bui_room_confirm_args_t *args = ctx->frame_ptr;
+		// Draw text
+		{
+			uint8_t char_height = bui_font_get_font_info(args->font)->char_height;
+			uint8_t n_lines = 1;
+			for (const char *ch = args->msg; *ch != '\0'; ch++) {
+				if (*ch == '\n')
+					n_lines++;
+			}
+			int16_t y = -((int16_t) n_lines * (char_height + 1) - 1) / 2 + 16;
+			bool last_line = false;
+			for (const char *line = args->msg; !last_line;) {
+				uint8_t line_len = 0;
+				for (;; line_len++) {
+					if (line[line_len] == '\0') {
+						last_line = true;
+						break;
+					}
+					if (line[line_len] == '\n') {
+						last_line = false;
+						break;
+					}
+				}
+				bui_font_draw_char_buff(data->bui_ctx, line, line_len, 64, y, BUI_DIR_TOP, args->font);
+				line += line_len + 1;
+				y += char_height + 1;
+			}
+		}
+		// Draw check & cross icons
+		bui_ctx_draw_bitmap_full(data->bui_ctx, BUI_BMP_ICON_CROSS, 3, 12);
+		bui_ctx_draw_bitmap_full(data->bui_ctx, BUI_BMP_ICON_CHECK, 117, 13);
+	} break;
+	case BUI_ROOM_EVENT_FORWARD: {
+		const bui_event_t *bui_event = BUI_ROOM_EVENT_DATA_FORWARD(event);
+		switch (bui_event->id) {
+		case BUI_EVENT_BUTTON_CLICKED: {
+			bui_button_id_t button = BUI_EVENT_DATA_BUTTON_CLICKED(bui_event)->button;
+			if (button == BUI_BUTTON_NANOS_BOTH)
+				break;
+			bool *confirmed = bui_room_alloc(ctx, sizeof(bool));
+			*confirmed = button == BUI_BUTTON_NANOS_RIGHT;
+			bui_room_exit(ctx);
+		} break;
+		// Other events are acknowledged
+		default:
+			break;
+		}
+	} break;
+	// Other events are acknowledged
+	default:
+		break;
+	}
 }
 
-void bui_room_current_draw(bui_room_ctx_t *ctx, bui_ctx_t *bui_ctx) {
-	bui_room_t *current = (bui_room_t*) bui_room_get_current(ctx);
-	bui_room_draw_callback_t callback = current->draw;
-	if (callback == NULL)
-		return;
-	callback = (bui_room_draw_callback_t) PIC(callback);
-	callback(ctx, current, bui_ctx);
-}
+const bui_room_t bui_room_confirm = {
+	.event_handler = bui_room_confirm_handle_event,
+};
